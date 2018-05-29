@@ -1,0 +1,70 @@
+<div align="center">
+  <a href="https://www.npmjs.com/package/react2ejs">
+    <img src="https://img.shields.io/npm/v/react2ejs.svg?maxAge=86400" alt="Last npm Registry Version">
+  </a>
+  <a href="https://travis-ci.org/ramasilveyra/react2ejs?branch=master">
+    <img src="https://travis-ci.org/ramasilveyra/react2ejs.svg?branch=master" alt="Build Status">
+  </a>
+  <a href="https://codecov.io/github/ramasilveyra/react2ejs?branch=master">
+    <img src="https://img.shields.io/codecov/c/github/ramasilveyra/react2ejs.svg?branch=master" alt="Code coverage">
+  </a>
+</div>
+
+<h1 align="center">Convert React Components to EJS (react2ejs)</h1>
+
+<p align="center"><a href="https://youtu.be/hHd7aqj3LF4?t=22s">Why? There is no why.</a> Jokes aside, <strong><a href="https://github.com/ramasilveyra/templating-benchmarks/tree/feat/add-ejs#performance">EJS can be 94% faster</a></strong>.</p>
+
+<h2 align="center">Table of Contents</h2>
+
+- [Install](#install)
+- [Usage](#usage)
+- [Limitations](#limitations)
+- [Contribute](#contribute)
+- [License](#license)
+
+<h2 align="center">Install</h2>
+
+**Node.js v8 or newer** is required.
+
+Via the yarn client:
+
+```bash
+$ yarn add --dev react2ejs
+```
+
+Via the npm client:
+
+```bash
+$ npm install --save-dev react2ejs
+```
+
+<h2 align="center">Usage</h2>
+
+### Convert Files
+
+```bash
+
+react2ejs src/button.js --out-file views/button.ejs
+```
+
+### Convert Directories
+
+```bash
+
+react2ejs src --out-dir views
+```
+
+<h2 align="center">Limitations</h2>
+
+- Only works with functional components.
+- Only works with one React Component per file.
+
+<h2 align="center">Contribute</h2>
+
+Feel free to dive in! [Open an issue](https://github.com/ramasilveyra/react2ejs/issues/new) or submit PRs.
+
+react2ejs follows the [Contributor Covenant](https://contributor-covenant.org/version/1/4/) Code of Conduct.
+
+<h2 align="center">License</h2>
+
+[MIT](LICENSE.md)
