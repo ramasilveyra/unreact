@@ -1,7 +1,7 @@
 /* eslint-disable no-underscore-dangle, no-param-reassign */
 import babelTraverse from '@babel/traverse';
 import * as t from '@babel/types';
-import { createElement, createEJSEscaped, createRoot, createText } from './ast';
+import { createElement, createEJSEscaped, createProperty, createRoot, createText } from './ast';
 
 function transformation(oldAst) {
   const newAst = createRoot();
@@ -23,11 +23,31 @@ function transformation(oldAst) {
       context.children.push(text);
     },
     JSXExpressionContainer(path) {
+      if (t.isJSXAttribute(path.parent)) {
+        return;
+      }
       const context = getContext(path);
       const expression = path.node.expression;
       if (t.isIdentifier(expression)) {
         const ejsEscaped = createEJSEscaped(expression.name);
         context.children.push(ejsEscaped);
+      }
+    },
+    JSXAttribute(path) {
+      const context = getContext(path);
+      const name = path.node.name.name;
+      const valueNode = path.node.value;
+      if (!valueNode) {
+        const property = createProperty(name, true);
+        context.properties.push(property);
+      }
+      if (t.isStringLiteral(valueNode)) {
+        const property = createProperty(name, valueNode.value);
+        context.properties.push(property);
+      }
+      if (t.isJSXExpressionContainer(valueNode) && t.isIdentifier(valueNode.expression)) {
+        const property = createProperty(name, valueNode.expression.name, true);
+        context.properties.push(property);
       }
     }
   };

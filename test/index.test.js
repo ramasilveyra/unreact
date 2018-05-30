@@ -29,6 +29,21 @@ describe('while using react2ejs', () => {
     const result = compile(input);
     expect(result).toBe(output);
   });
+  it('should convert react components with attributes to ejs', async () => {
+    const { input, output } = await getTestCase('attrs');
+    const result = compile(input);
+    expect(result).toBe(output);
+  });
+  it('should convert react components with boolean attributes to ejs', async () => {
+    const { input, output } = await getTestCase('attrs-boolean');
+    const result = compile(input);
+    expect(result).toBe(output);
+  });
+  it('should convert react components with var expression attributes to ejs', async () => {
+    const { input, output } = await getTestCase('attrs-var-expression');
+    const result = compile(input);
+    expect(result).toBe(output);
+  });
 });
 
 async function getTestCase(folder) {

@@ -5,7 +5,7 @@ export const createRoot = () => ({
 });
 
 export const elementName = 'Element';
-export const createElement = (tagName, properties = null) => ({
+export const createElement = (tagName, properties = []) => ({
   type: elementName,
   tagName,
   properties,
@@ -16,6 +16,14 @@ export const textName = 'Text';
 export const createText = value => ({
   type: textName,
   value
+});
+
+export const propertyName = 'Property';
+export const createProperty = (name, value, expression = false) => ({
+  type: propertyName,
+  name,
+  value,
+  expression
 });
 
 export const EJSEscapedName = 'EJSEscaped';
