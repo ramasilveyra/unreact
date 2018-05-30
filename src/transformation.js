@@ -3,9 +3,9 @@ import babelTraverse from '@babel/traverse';
 import babelGenerator from '@babel/generator';
 import * as t from '@babel/types';
 import {
+  createAttribute,
   createElement,
   createTemplateEscaped,
-  createProperty,
   createRoot,
   createText
 } from './ast';
@@ -49,24 +49,24 @@ function transformation(oldAst) {
       const name = path.node.name.name;
       const valueNode = path.node.value;
       if (!valueNode) {
-        const property = createProperty(name, true);
-        context.properties.push(property);
+        const attribute = createAttribute(name, true);
+        context.attributes.push(attribute);
         return;
       }
       if (t.isStringLiteral(valueNode)) {
-        const property = createProperty(name, valueNode.value);
-        context.properties.push(property);
+        const attribute = createAttribute(name, valueNode.value);
+        context.attributes.push(attribute);
         return;
       }
       if (t.isJSXExpressionContainer(valueNode) && t.isIdentifier(valueNode.expression)) {
-        const property = createProperty(name, valueNode.expression.name, true);
-        context.properties.push(property);
+        const attribute = createAttribute(name, valueNode.expression.name, true);
+        context.attributes.push(attribute);
         return;
       }
       if (t.isJSXExpressionContainer(valueNode)) {
         const { code } = babelGenerator(valueNode.expression);
-        const property = createProperty(name, code, true);
-        context.properties.push(property);
+        const attribute = createAttribute(name, code, true);
+        context.attributes.push(attribute);
       }
     }
   };

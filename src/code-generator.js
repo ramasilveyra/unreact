@@ -1,5 +1,5 @@
 import isSelfClosing from 'is-self-closing';
-import { elementName, rootName, textName, propertyName, TemplateEscapedName } from './ast';
+import { elementName, rootName, textName, attributeName, templateEscapedName } from './ast';
 
 function codeGenerator(node) {
   switch (node.type) {
@@ -9,13 +9,13 @@ function codeGenerator(node) {
       return `${generateTag(
         node.tagName,
         node.children.map(codeGenerator).join(''),
-        node.properties.map(codeGenerator).join('')
+        node.attributes.map(codeGenerator).join('')
       )}`;
     case textName:
       return node.value;
-    case propertyName:
+    case attributeName:
       return generateProperty(node.name, node.value, node.expression);
-    case TemplateEscapedName:
+    case templateEscapedName:
       return `<%= ${node.value} %>`;
     default:
       throw new TypeError(node.type);

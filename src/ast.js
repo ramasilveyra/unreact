@@ -5,10 +5,10 @@ export const createRoot = () => ({
 });
 
 export const elementName = 'Element';
-export const createElement = (tagName, properties = []) => ({
+export const createElement = (tagName, attributes = []) => ({
   type: elementName,
   tagName,
-  properties,
+  attributes,
   children: []
 });
 
@@ -18,16 +18,16 @@ export const createText = value => ({
   value
 });
 
-export const propertyName = 'Property';
-export const createProperty = (name, value, expression = false) => ({
-  type: propertyName,
+export const attributeName = 'Attribute';
+export const createAttribute = (name, value, expression = false) => ({
+  type: attributeName,
   name,
   value,
   expression
 });
 
-export const TemplateEscapedName = 'TemplateEscaped';
+export const templateEscapedName = 'TemplateEscaped';
 export const createTemplateEscaped = value => ({
-  type: TemplateEscapedName,
+  type: templateEscapedName,
   value
 });
