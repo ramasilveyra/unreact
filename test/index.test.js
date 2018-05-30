@@ -24,6 +24,11 @@ describe('while using react2ejs', () => {
     const result = compile(input);
     expect(result).toBe(output);
   });
+  it('should convert react components of one tag with complex expression to ejs', async () => {
+    const { input, output } = await getTestCase('with-complex-expression');
+    const result = compile(input);
+    expect(result).toBe(output);
+  });
   it('should convert react components of a self closing tag to ejs', async () => {
     const { input, output } = await getTestCase('self-closing-tag');
     const result = compile(input);
@@ -41,6 +46,11 @@ describe('while using react2ejs', () => {
   });
   it('should convert react components with var expression attributes to ejs', async () => {
     const { input, output } = await getTestCase('attrs-var-expression');
+    const result = compile(input);
+    expect(result).toBe(output);
+  });
+  it('should convert react components with complex expression attributes to ejs', async () => {
+    const { input, output } = await getTestCase('attrs-complex-expression');
     const result = compile(input);
     expect(result).toBe(output);
   });

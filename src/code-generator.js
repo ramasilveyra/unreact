@@ -1,5 +1,5 @@
 import isSelfClosing from 'is-self-closing';
-import { elementName, rootName, textName, propertyName, EJSEscapedName } from './ast';
+import { elementName, rootName, textName, propertyName, TemplateEscapedName } from './ast';
 
 function codeGenerator(node) {
   switch (node.type) {
@@ -15,7 +15,7 @@ function codeGenerator(node) {
       return node.value;
     case propertyName:
       return generateProperty(node.name, node.value, node.expression);
-    case EJSEscapedName:
+    case TemplateEscapedName:
       return `<%= ${node.value} %>`;
     default:
       throw new TypeError(node.type);
@@ -56,6 +56,8 @@ function normalizePropertyName(name) {
   switch (name) {
     case 'className':
       return 'class';
+    case 'tabIndex':
+      return 'tabindex';
     default:
       return name;
   }

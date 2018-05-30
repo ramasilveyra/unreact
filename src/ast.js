@@ -26,8 +26,8 @@ export const createProperty = (name, value, expression = false) => ({
   expression
 });
 
-export const EJSEscapedName = 'EJSEscaped';
-export const createEJSEscaped = value => ({
-  type: EJSEscapedName,
+export const TemplateEscapedName = 'TemplateEscaped';
+export const createTemplateEscaped = value => ({
+  type: TemplateEscapedName,
   value
 });
