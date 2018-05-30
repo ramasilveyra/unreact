@@ -24,6 +24,11 @@ describe('while using react2ejs', () => {
     const result = compile(input);
     expect(result).toBe(output);
   });
+  it('should convert react components of a self closing tag to ejs', async () => {
+    const { input, output } = await getTestCase('self-closing-tag');
+    const result = compile(input);
+    expect(result).toBe(output);
+  });
 });
 
 async function getTestCase(folder) {

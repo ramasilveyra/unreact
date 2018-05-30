@@ -1,3 +1,4 @@
+import isSelfClosing from 'is-self-closing';
 import { elementName, rootName, textName, EJSEscapedName } from './ast';
 
 function codeGenerator(node) {
@@ -18,6 +19,9 @@ function codeGenerator(node) {
 export default codeGenerator;
 
 function generateTag(tagName, children) {
+  if (isSelfClosing(tagName)) {
+    return `<${tagName} />`;
+  }
   const startTag = `<${tagName}>`;
   const endTag = `</${tagName}>`;
   const tag = startTag + children + endTag;
