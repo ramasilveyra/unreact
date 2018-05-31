@@ -54,6 +54,11 @@ describe('while using react2ejs', () => {
     const result = compile(input);
     expect(result).toBe(output);
   });
+  it('should convert react components with logical expression to ejs', async () => {
+    const { input, output } = await getTestCase('logical-expression');
+    const result = compile(input);
+    expect(result).toBe(output);
+  });
 });
 
 async function getTestCase(folder) {

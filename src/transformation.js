@@ -4,10 +4,14 @@ import babelGenerator from '@babel/generator';
 import * as t from '@babel/types';
 import {
   createAttribute,
+  createCondition,
   createElement,
   createInterpolationEscaped,
   createRoot,
-  createText
+  createText,
+  rootName,
+  elementName,
+  conditionName
 } from './ast';
 
 function transformation(oldAst) {
@@ -20,7 +24,7 @@ function transformation(oldAst) {
       const tagName = path.node.openingElement.name.name;
       const element = createElement(tagName);
       const context = getContext(path);
-      context.children.push(element);
+      addToContext(context, element);
       setContext(path, element);
     },
     JSXText(path) {
@@ -39,6 +43,13 @@ function transformation(oldAst) {
       if (t.isIdentifier(expression)) {
         const interpolationEscaped = createInterpolationEscaped(expression.name);
         context.children.push(interpolationEscaped);
+        return;
+      }
+      if (t.isLogicalExpression(expression, { operator: '&&' })) {
+        const { code } = babelGenerator(expression.left);
+        const condition = createCondition(code);
+        context.children.push(condition);
+        setContext(path, condition);
         return;
       }
       const { code } = babelGenerator(expression);
@@ -98,4 +109,18 @@ function setContext(path, context) {
 function getContext(path) {
   const context = path.findParent(pathItem => !!pathItem.node._context).node._context;
   return context;
+}
+
+function addToContext(context, node) {
+  switch (context.type) {
+    case rootName:
+    case elementName:
+      context.children.push(node);
+      break;
+    case conditionName:
+      context.consequent = node;
+      break;
+    default:
+      throw new Error(`Don't know how to add node to ${context.type}`);
+  }
 }

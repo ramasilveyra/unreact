@@ -1,5 +1,12 @@
 import isSelfClosing from 'is-self-closing';
-import { elementName, rootName, textName, attributeName, interpolationEscapedName } from './ast';
+import {
+  elementName,
+  rootName,
+  textName,
+  attributeName,
+  interpolationEscapedName,
+  conditionName
+} from './ast';
 
 function codeGenerator(node) {
   switch (node.type) {
@@ -17,6 +24,8 @@ function codeGenerator(node) {
       return generateProperty(node.name, node.value, node.expression);
     case interpolationEscapedName:
       return `<%= ${node.value} %>`;
+    case conditionName:
+      return generateCondition(node.test, codeGenerator(node.consequent));
     default:
       throw new TypeError(node.type);
   }
@@ -61,4 +70,9 @@ function normalizePropertyName(name) {
     default:
       return name;
   }
+}
+
+function generateCondition(test, consequent) {
+  const conditionArray = [`<% if (${test}) { %>`, consequent, `<% } %>`];
+  return conditionArray.join('\n');
 }
