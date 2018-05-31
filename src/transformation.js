@@ -5,7 +5,7 @@ import * as t from '@babel/types';
 import {
   createAttribute,
   createElement,
-  createTemplateEscaped,
+  createInterpolationEscaped,
   createRoot,
   createText
 } from './ast';
@@ -30,19 +30,20 @@ function transformation(oldAst) {
       context.children.push(text);
     },
     JSXExpressionContainer(path) {
+      // Let JSXAttribute visitor handle JSXExpressionContainer of attributes.
       if (t.isJSXAttribute(path.parent)) {
         return;
       }
       const context = getContext(path);
       const expression = path.node.expression;
       if (t.isIdentifier(expression)) {
-        const templateEscaped = createTemplateEscaped(expression.name);
-        context.children.push(templateEscaped);
+        const interpolationEscaped = createInterpolationEscaped(expression.name);
+        context.children.push(interpolationEscaped);
         return;
       }
       const { code } = babelGenerator(expression);
-      const templateEscaped = createTemplateEscaped(code);
-      context.children.push(templateEscaped);
+      const interpolationEscaped = createInterpolationEscaped(code);
+      context.children.push(interpolationEscaped);
     },
     JSXAttribute(path) {
       const context = getContext(path);
