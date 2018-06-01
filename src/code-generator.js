@@ -80,9 +80,9 @@ function generateCondition(test, consequent, alternate) {
   const conditionArray = [
     `<% if (${test}) { %>`,
     consequent,
-    alternate ? '<% } else { %>' : '<% } %>',
+    alternate ? '<% } else { %>' : null,
     alternate,
-    alternate && '<% } %>'
+    '<% } %>'
   ].filter(Boolean);
   return conditionArray.join('\n');
 }
