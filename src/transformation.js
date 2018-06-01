@@ -163,26 +163,22 @@ function getContext(path) {
 
 function addToContext(context, node, member) {
   if (member) {
-    if (Array.isArray(context[member])) {
-      context[member].push(node);
-      return;
-    }
-    context[member] = node;
+    addNode(context, node, member);
     return;
   }
   switch (context.type) {
     case rootName:
     case elementName:
-      context.children.push(node);
+      addNode(context, node, 'children');
       break;
     case iterationName:
-      context.body = node;
+      addNode(context, node, 'body');
       break;
     case conditionName:
       if (context.consequent) {
-        context.alternate = node;
+        addNode(context, node, 'alternate');
       } else {
-        context.consequent = node;
+        addNode(context, node, 'consequent');
       }
       break;
     default:
@@ -197,4 +193,12 @@ function isMapIterator(node) {
   }
   const is = callee.property.name === 'map';
   return is;
+}
+
+function addNode(context, node, member) {
+  if (Array.isArray(context[member])) {
+    context[member].push(node);
+    return;
+  }
+  context[member] = node;
 }
