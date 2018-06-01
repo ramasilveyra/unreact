@@ -1,5 +1,10 @@
 import React from 'react';
 
-const Foo = () => <input checked />;
+const Foo = () => (
+  <div>
+    <label htmlFor="name">Name:</label>
+    <input checked id="name" />
+  </div>
+);
 
 export default Foo;

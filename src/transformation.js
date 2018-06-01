@@ -216,7 +216,7 @@ function addNode(context, node, member) {
 }
 
 function shouldIgnoreAttr(name) {
-  if (['key', 'onClick'].includes(name)) {
+  if (['key', 'onClick', 'ref'].includes(name)) {
     return true;
   }
   return false;
