@@ -25,7 +25,11 @@ function codeGenerator(node) {
     case interpolationEscapedName:
       return `<%= ${node.value} %>`;
     case conditionName:
-      return generateCondition(node.test, codeGenerator(node.consequent));
+      return generateCondition(
+        node.test,
+        codeGenerator(node.consequent),
+        node.alternate && codeGenerator(node.alternate)
+      );
     default:
       throw new TypeError(node.type);
   }
@@ -72,7 +76,13 @@ function normalizePropertyName(name) {
   }
 }
 
-function generateCondition(test, consequent) {
-  const conditionArray = [`<% if (${test}) { %>`, consequent, `<% } %>`];
+function generateCondition(test, consequent, alternate) {
+  const conditionArray = [
+    `<% if (${test}) { %>`,
+    consequent,
+    alternate ? '<% } else { %>' : '<% } %>',
+    alternate,
+    alternate && '<% } %>'
+  ].filter(Boolean);
   return conditionArray.join('\n');
 }

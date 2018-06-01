@@ -31,7 +31,7 @@ function transformation(oldAst) {
       const value = path.node.value;
       const text = createText(value);
       const context = getContext(path);
-      context.children.push(text);
+      addToContext(context, text);
     },
     JSXExpressionContainer(path) {
       // Let JSXAttribute visitor handle JSXExpressionContainer of attributes.
@@ -42,19 +42,22 @@ function transformation(oldAst) {
       const expression = path.node.expression;
       if (t.isIdentifier(expression)) {
         const interpolationEscaped = createInterpolationEscaped(expression.name);
-        context.children.push(interpolationEscaped);
+        addToContext(context, interpolationEscaped);
         return;
       }
       if (t.isLogicalExpression(expression, { operator: '&&' })) {
         const { code } = babelGenerator(expression.left);
         const condition = createCondition(code);
-        context.children.push(condition);
+        addToContext(context, condition);
         setContext(path, condition);
+        return;
+      }
+      if (t.isConditionalExpression(expression)) {
         return;
       }
       const { code } = babelGenerator(expression);
       const interpolationEscaped = createInterpolationEscaped(code);
-      context.children.push(interpolationEscaped);
+      addToContext(context, interpolationEscaped);
     },
     JSXAttribute(path) {
       const context = getContext(path);
@@ -62,23 +65,37 @@ function transformation(oldAst) {
       const valueNode = path.node.value;
       if (!valueNode) {
         const attribute = createAttribute(name, true);
-        context.attributes.push(attribute);
+        addToContext(context, attribute, 'attributes');
         return;
       }
       if (t.isStringLiteral(valueNode)) {
         const attribute = createAttribute(name, valueNode.value);
-        context.attributes.push(attribute);
+        addToContext(context, attribute, 'attributes');
         return;
       }
       if (t.isJSXExpressionContainer(valueNode) && t.isIdentifier(valueNode.expression)) {
         const attribute = createAttribute(name, valueNode.expression.name, true);
-        context.attributes.push(attribute);
+        addToContext(context, attribute, 'attributes');
         return;
       }
       if (t.isJSXExpressionContainer(valueNode)) {
         const { code } = babelGenerator(valueNode.expression);
         const attribute = createAttribute(name, code, true);
-        context.attributes.push(attribute);
+        addToContext(context, attribute, 'attributes');
+      }
+    },
+    ConditionalExpression(path) {
+      const context = getContext(path);
+      const { code: test } = babelGenerator(path.node.test);
+      const condition = createCondition(test);
+      addToContext(context, condition);
+      setContext(path, condition);
+    },
+    StringLiteral(path) {
+      if (t.isConditionalExpression(path.parent)) {
+        const context = getContext(path);
+        const text = createText(path.node.value);
+        addToContext(context, text);
       }
     }
   };
@@ -111,14 +128,26 @@ function getContext(path) {
   return context;
 }
 
-function addToContext(context, node) {
+function addToContext(context, node, member) {
+  if (member) {
+    if (Array.isArray(context[member])) {
+      context[member].push(node);
+      return;
+    }
+    context[member] = node;
+    return;
+  }
   switch (context.type) {
     case rootName:
     case elementName:
       context.children.push(node);
       break;
     case conditionName:
-      context.consequent = node;
+      if (context.consequent) {
+        context.alternate = node;
+      } else {
+        context.consequent = node;
+      }
       break;
     default:
       throw new Error(`Don't know how to add node to ${context.type}`);
