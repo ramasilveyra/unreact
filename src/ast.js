@@ -62,9 +62,17 @@ export const createCondition = (test, consequent, alternate = null) => ({
 
 // Template engine syntax for iteration.
 export const iterationName = 'Iteration';
-export const createIteration = (test, consequent, alternate = null) => ({
+export const createIteration = ({
+  iterable,
+  currentValue,
+  index = null,
+  array = null,
+  body = null
+}) => ({
   type: iterationName,
-  test,
-  consequent,
-  alternate
+  iterable,
+  currentValue,
+  index,
+  array,
+  body
 });

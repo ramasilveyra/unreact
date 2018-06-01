@@ -6,12 +6,14 @@ import {
   createAttribute,
   createCondition,
   createElement,
+  createIteration,
   createInterpolationEscaped,
   createRoot,
   createText,
   rootName,
   elementName,
-  conditionName
+  conditionName,
+  iterationName
 } from './ast';
 
 function transformation(oldAst) {
@@ -45,6 +47,12 @@ function transformation(oldAst) {
         return;
       }
       if (t.isConditionalExpression(expression)) {
+        return;
+      }
+
+      const isIterator = isMapIterator(expression);
+
+      if (isIterator) {
         return;
       }
 
@@ -82,6 +90,22 @@ function transformation(oldAst) {
         const { code } = babelGenerator(valueNode.expression);
         const attribute = createAttribute(name, code, true);
         addToContext(context, attribute, 'attributes');
+      }
+    },
+    CallExpression(path) {
+      const callee = path.node.callee;
+      const aarguments = path.node.arguments[0];
+      const isIterator = isMapIterator(path.node);
+      if (isIterator) {
+        const context = getContext(path);
+        const { code } = babelGenerator(callee);
+        const iterable = code.replace('.map', '');
+        const currentValue = aarguments.params[0].name;
+        const index = aarguments.params[1] ? aarguments.params[1].name : null;
+        const array = aarguments.params[2] ? aarguments.params[2].name : null;
+        const iteration = createIteration({ iterable, currentValue, index, array });
+        addToContext(context, iteration);
+        setContext(path, iteration);
       }
     },
     LogicalExpression(path) {
@@ -151,6 +175,9 @@ function addToContext(context, node, member) {
     case elementName:
       context.children.push(node);
       break;
+    case iterationName:
+      context.body = node;
+      break;
     case conditionName:
       if (context.consequent) {
         context.alternate = node;
@@ -161,4 +188,13 @@ function addToContext(context, node, member) {
     default:
       throw new Error(`Don't know how to add node to ${context.type}`);
   }
+}
+
+function isMapIterator(node) {
+  const callee = node.callee;
+  if (!callee || !callee.property) {
+    return false;
+  }
+  const is = callee.property.name === 'map';
+  return is;
 }

@@ -5,7 +5,8 @@ import {
   textName,
   attributeName,
   interpolationEscapedName,
-  conditionName
+  conditionName,
+  iterationName
 } from './ast';
 
 function codeGenerator(node) {
@@ -30,6 +31,14 @@ function codeGenerator(node) {
         codeGenerator(node.consequent),
         node.alternate && codeGenerator(node.alternate)
       );
+    case iterationName:
+      return generateIteration({
+        iterable: node.iterable,
+        currentValue: node.currentValue,
+        index: node.index,
+        array: node.array,
+        body: codeGenerator(node.body)
+      });
     default:
       throw new TypeError(node.type);
   }
@@ -85,4 +94,12 @@ function generateCondition(test, consequent, alternate) {
     '<% } %>'
   ].filter(Boolean);
   return conditionArray.join('\n');
+}
+
+function generateIteration({ iterable, currentValue, index, array, body }) {
+  const params = [currentValue, index, array].filter(Boolean).join(', ');
+  const iterationArray = [`<% ${iterable}.forEach((${params}) { %>`, body, '<% }) %>'].filter(
+    Boolean
+  );
+  return iterationArray.join('\n');
 }
