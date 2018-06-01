@@ -1,16 +1,16 @@
 <div>
-    <ul><% list.forEach((item) { %>
+    <ul><% list.forEach((item) => { %>
 <li><%= item %></li>
 <% }) %></ul>
     <ul>
-      <% list.forEach((item, index) { %>
+      <% list.forEach((item, index) => { %>
 <li>
           <%= item %> at <%= index %>
         </li>
 <% }) %>
     </ul>
     <ul>
-      <% list.forEach((item, index, array) { %>
+      <% list.forEach((item, index, array) => { %>
 <li>
           <%= item %> at <%= index %> of <%= array.join(', ') %>
         </li>

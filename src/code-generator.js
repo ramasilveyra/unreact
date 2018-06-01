@@ -98,7 +98,7 @@ function generateCondition(test, consequent, alternate) {
 
 function generateIteration({ iterable, currentValue, index, array, body }) {
   const params = [currentValue, index, array].filter(Boolean).join(', ');
-  const iterationArray = [`<% ${iterable}.forEach((${params}) { %>`, body, '<% }) %>'].filter(
+  const iterationArray = [`<% ${iterable}.forEach((${params}) => { %>`, body, '<% }) %>'].filter(
     Boolean
   );
   return iterationArray.join('\n');
