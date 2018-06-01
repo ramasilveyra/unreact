@@ -38,21 +38,21 @@ function transformation(oldAst) {
       if (t.isJSXAttribute(path.parent)) {
         return;
       }
-      const context = getContext(path);
+
       const expression = path.node.expression;
-      if (t.isIdentifier(expression)) {
-        const interpolationEscaped = createInterpolationEscaped(expression.name);
-        addToContext(context, interpolationEscaped);
-        return;
-      }
+
       if (t.isLogicalExpression(expression, { operator: '&&' })) {
-        const { code } = babelGenerator(expression.left);
-        const condition = createCondition(code);
-        addToContext(context, condition);
-        setContext(path, condition);
         return;
       }
       if (t.isConditionalExpression(expression)) {
+        return;
+      }
+
+      const context = getContext(path);
+
+      if (t.isIdentifier(expression)) {
+        const interpolationEscaped = createInterpolationEscaped(expression.name);
+        addToContext(context, interpolationEscaped);
         return;
       }
       const { code } = babelGenerator(expression);
@@ -82,6 +82,15 @@ function transformation(oldAst) {
         const { code } = babelGenerator(valueNode.expression);
         const attribute = createAttribute(name, code, true);
         addToContext(context, attribute, 'attributes');
+      }
+    },
+    LogicalExpression(path) {
+      if (t.isLogicalExpression(path.node, { operator: '&&' })) {
+        const context = getContext(path);
+        const { code } = babelGenerator(path.node.left);
+        const condition = createCondition(code);
+        addToContext(context, condition);
+        setContext(path, condition);
       }
     },
     ConditionalExpression(path) {
