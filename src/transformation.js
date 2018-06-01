@@ -9,12 +9,14 @@ import {
   createElement,
   createIteration,
   createInterpolationEscaped,
+  createMixin,
   createRoot,
   createText,
   rootName,
   elementName,
   conditionName,
-  iterationName
+  iterationName,
+  mixinName
 } from './ast';
 
 function transformation(oldAst) {
@@ -160,9 +162,14 @@ function transformation(oldAst) {
 
   const generalVisitor = {
     VariableDeclaration(path) {
-      console.log('path.node.declarations[0].id.name', path.node.declarations[0].id.name);
-      // TODO: validate that is a functional component before proceed.
-      path.traverse(reactComponentVisitor);
+      const isRC = isFunctionalReactComponent(path);
+      if (isRC) {
+        const context = getContext(path);
+        const mixin = createMixin();
+        addToContext(context, mixin);
+        setContext(path, mixin);
+        path.traverse(reactComponentVisitor);
+      }
     }
   };
 
@@ -172,6 +179,37 @@ function transformation(oldAst) {
 }
 
 export default transformation;
+
+// Note: this makes a lot of assumptions based on common conventions, it's not accurate.
+function isFunctionalReactComponent(path) {
+  const node = path.node;
+  const isVariableDeclaration = t.isVariableDeclaration(node);
+  const isFunctionDeclaration = t.isFunctionDeclaration(node);
+  if (!isVariableDeclaration && !isFunctionDeclaration) {
+    return false;
+  }
+  const name = isVariableDeclaration ? node.declarations[0].id.name : node.id.name;
+  const startsWithCapitalLetter = name[0] === name[0].toUpperCase();
+  if (!startsWithCapitalLetter) {
+    return false;
+  }
+  if (isJSXElementOrReactCreateElement(path)) {
+    return true;
+  }
+  return false;
+}
+
+function isJSXElementOrReactCreateElement(path) {
+  let visited = false;
+
+  path.traverse({
+    JSXElement() {
+      visited = true;
+    }
+  });
+
+  return visited;
+}
 
 function setContext(path, context) {
   if (path.type === 'File') {
@@ -195,6 +233,7 @@ function addToContext(context, node, member) {
   switch (context.type) {
     case rootName:
     case elementName:
+    case mixinName:
       addNode(context, node, 'children');
       break;
     case iterationName:

@@ -1,6 +1,7 @@
 import isSelfClosing from 'is-self-closing';
 import {
   elementName,
+  mixinName,
   rootName,
   textName,
   attributeName,
@@ -13,6 +14,8 @@ function codeGenerator(node, level = 0, removeEmptyLine = false) {
   switch (node.type) {
     case rootName:
       return node.children.map((child, i) => codeGenerator(child, level, i === 0)).join('');
+    case mixinName:
+      return node.children.map(child => codeGenerator(child, level, removeEmptyLine));
     case elementName:
       return indent(
         generateTag(
