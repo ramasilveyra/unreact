@@ -77,6 +77,9 @@ function transformation(oldAst) {
       const context = getContext(path);
       const name = path.node.name.name;
       const valueNode = path.node.value;
+      if (shouldIgnoreAttr(name)) {
+        return;
+      }
       if (!valueNode) {
         const attribute = createAttribute(name, true);
         addToContext(context, attribute, 'attributes');
@@ -207,4 +210,11 @@ function addNode(context, node, member) {
     return;
   }
   context[member] = node;
+}
+
+function shouldIgnoreAttr(name) {
+  if (['key', 'onClick'].includes(name)) {
+    return true;
+  }
+  return false;
 }

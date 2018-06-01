@@ -69,6 +69,11 @@ describe('while using react2ejs', () => {
     const result = compile(input);
     expect(result).toBe(output);
   });
+  it('should convert react components to ejs and ignore unnecessary attributes', async () => {
+    const { input, output } = await getTestCase('ignore-unnecessary-attrs');
+    const result = compile(input);
+    expect(result).toBe(output);
+  });
 });
 
 async function getTestCase(folder) {
