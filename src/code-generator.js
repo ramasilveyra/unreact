@@ -9,36 +9,48 @@ import {
   iterationName
 } from './ast';
 
-function codeGenerator(node) {
+function codeGenerator(node, level = 0, removeEmptyLine = false) {
   switch (node.type) {
     case rootName:
-      return `${node.children.map(codeGenerator).join('')}\n`;
+      return node.children.map((child, i) => codeGenerator(child, level, i === 0)).join('');
     case elementName:
-      return `${generateTag(
-        node.tagName,
-        node.children.map(codeGenerator).join(''),
-        node.attributes.map(codeGenerator).join('')
-      )}`;
+      return indent(
+        generateTag(
+          node.tagName,
+          node.children.map(child => codeGenerator(child, level + 1, removeEmptyLine)).join(''),
+          node.attributes.map(child => codeGenerator(child, level + 1, removeEmptyLine)).join('')
+        ),
+        level,
+        removeEmptyLine
+      );
     case textName:
       return node.value;
     case attributeName:
       return generateProperty(node.name, node.value, node.expression);
     case interpolationEscapedName:
-      return `<%= ${node.value} %>`;
+      return generateInterpolationEscaped(node.value);
     case conditionName:
-      return generateCondition(
-        node.test,
-        codeGenerator(node.consequent),
-        node.alternate && codeGenerator(node.alternate)
+      return indent(
+        generateCondition(
+          node.test,
+          codeGenerator(node.consequent, level + 1, removeEmptyLine, removeEmptyLine),
+          node.alternate && codeGenerator(node.alternate, level + 1, removeEmptyLine)
+        ),
+        level,
+        removeEmptyLine
       );
     case iterationName:
-      return generateIteration({
-        iterable: node.iterable,
-        currentValue: node.currentValue,
-        index: node.index,
-        array: node.array,
-        body: codeGenerator(node.body)
-      });
+      return indent(
+        generateIteration({
+          iterable: node.iterable,
+          currentValue: node.currentValue,
+          index: node.index,
+          array: node.array,
+          body: codeGenerator(node.body, level + 1, removeEmptyLine)
+        }),
+        level,
+        removeEmptyLine
+      );
     default:
       throw new TypeError(node.type);
   }
@@ -68,7 +80,7 @@ function generateProperty(name, value, expression) {
   }
 
   if (expression) {
-    return `${startPropertyBeginning}="<%= ${value} %>"`;
+    return `${startPropertyBeginning}="${generateInterpolationEscaped(value)}"`;
   }
 
   return `${startPropertyBeginning}="${value}"`;
@@ -87,19 +99,40 @@ function normalizePropertyName(name) {
 
 function generateCondition(test, consequent, alternate) {
   const conditionArray = [
-    `<% if (${test}) { %>`,
+    generateScriptlet(`if (${test}) {`),
     consequent,
-    alternate ? '<% } else { %>' : null,
+    alternate ? generateScriptlet('} else {') : null,
     alternate,
-    '<% } %>'
+    generateScriptlet('}')
   ].filter(Boolean);
-  return conditionArray.join('\n');
+  return conditionArray.join('');
 }
 
 function generateIteration({ iterable, currentValue, index, array, body }) {
   const params = [currentValue, index, array].filter(Boolean).join(', ');
-  const iterationArray = [`<% ${iterable}.forEach((${params}) => { %>`, body, '<% }) %>'].filter(
-    Boolean
-  );
-  return iterationArray.join('\n');
+  const iterationArray = [
+    generateScriptlet(`${iterable}.forEach((${params}) => {`),
+    body,
+    generateScriptlet('})')
+  ].filter(Boolean);
+  return iterationArray.join('');
+}
+
+function generateScriptlet(value) {
+  return `<% ${value} %>`;
+}
+
+function generateInterpolationEscaped(value) {
+  return `<%= ${value} %>`;
+}
+
+function indent(str, level = 0, removeEmptyLine = false) {
+  const indentChar = ' ';
+  const indentLength = 2;
+  const startIndentNumber = level * indentLength;
+  const endIndentNumber = (level ? level - 1 : level) * indentLength;
+  const strIndented = `${removeEmptyLine && level === 0 ? '' : '\n'}${indentChar.repeat(
+    startIndentNumber
+  )}${str}${'\n'}${indentChar.repeat(endIndentNumber)}`;
+  return strIndented;
 }

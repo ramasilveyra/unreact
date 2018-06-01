@@ -2,6 +2,7 @@
 import babelTraverse from '@babel/traverse';
 import babelGenerator from '@babel/generator';
 import * as t from '@babel/types';
+import cleanJSXElementLiteralChild from '@babel/types/lib/utils/react/cleanJSXElementLiteralChild';
 import {
   createAttribute,
   createCondition,
@@ -30,7 +31,12 @@ function transformation(oldAst) {
       setContext(path, element);
     },
     JSXText(path) {
-      const value = path.node.value;
+      const elems = [];
+      cleanJSXElementLiteralChild(path.node, elems);
+      const value = elems[0] ? elems[0].value : '';
+      if (!value) {
+        return;
+      }
       const text = createText(value);
       const context = getContext(path);
       addToContext(context, text);
