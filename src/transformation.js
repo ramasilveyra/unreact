@@ -53,7 +53,6 @@ function transformation(oldAst) {
         return;
       }
       if (t.isLogicalExpression(path.node, { operator: '||' })) {
-        console.log(path.node);
         return;
       }
       if (t.isConditionalExpression(expression)) {
