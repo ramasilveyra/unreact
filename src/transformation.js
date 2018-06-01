@@ -118,6 +118,9 @@ function transformation(oldAst) {
       }
     },
     LogicalExpression(path) {
+      if (t.isConditionalExpression(path.parent)) {
+        return;
+      }
       if (t.isLogicalExpression(path.node, { operator: '&&' })) {
         const context = getContext(path);
         const { code } = babelGenerator(path.node.left);

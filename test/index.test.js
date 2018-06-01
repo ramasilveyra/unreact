@@ -74,6 +74,11 @@ describe('while using react2ejs.compile()', () => {
     const result = compile(input);
     expect(result).toBe(output);
   });
+  it('should convert react components with logical expression inside conditional expression', async () => {
+    const { input, output } = await getTestCase('logical-expr-inside-conditional-expr');
+    const result = compile(input);
+    expect(result).toBe(output);
+  });
 });
 
 describe('while using react2ejs.compileFile()', () => {
