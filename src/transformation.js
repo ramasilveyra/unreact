@@ -160,12 +160,13 @@ function transformation(oldAst) {
 
   const generalVisitor = {
     VariableDeclaration(path) {
+      console.log('path.node.declarations[0].id.name', path.node.declarations[0].id.name);
       // TODO: validate that is a functional component before proceed.
       path.traverse(reactComponentVisitor);
     }
   };
 
-  babelTraverse(oldAst, generalVisitor, null, { newAst });
+  babelTraverse(oldAst, generalVisitor, null);
 
   return newAst;
 }
