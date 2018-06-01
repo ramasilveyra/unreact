@@ -52,6 +52,10 @@ function transformation(oldAst) {
       if (t.isLogicalExpression(expression, { operator: '&&' })) {
         return;
       }
+      if (t.isLogicalExpression(path.node, { operator: '||' })) {
+        console.log(path.node);
+        return;
+      }
       if (t.isConditionalExpression(expression)) {
         return;
       }
@@ -118,20 +122,30 @@ function transformation(oldAst) {
       }
     },
     LogicalExpression(path) {
-      if (t.isConditionalExpression(path.parent)) {
+      if (t.isConditionalExpression(path.parent) && path.parent.test === path.node) {
         return;
       }
+      const context = getContext(path);
       if (t.isLogicalExpression(path.node, { operator: '&&' })) {
-        const context = getContext(path);
         const { code } = babelGenerator(path.node.left);
         const condition = createCondition(code);
+        addToContext(context, condition);
+        setContext(path, condition);
+        return;
+      }
+      if (t.isLogicalExpression(path.node, { operator: '||' })) {
+        const { code } = babelGenerator(path.node.left);
+        const interpolationEscaped = createInterpolationEscaped(code);
+        const condition = createCondition(code, interpolationEscaped);
         addToContext(context, condition);
         setContext(path, condition);
       }
     },
     ConditionalExpression(path) {
       const context = getContext(path);
-      const { code: test } = babelGenerator(path.node.test);
+      const ignoreConsequent = t.isNullLiteral(path.node.consequent);
+      const { code } = babelGenerator(path.node.test);
+      const test = ignoreConsequent ? `!(${code})` : code;
       const condition = createCondition(test);
       addToContext(context, condition);
       setContext(path, condition);

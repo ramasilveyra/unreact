@@ -1,3 +1,15 @@
-<% if (error && errorMsg) { %>
-  <p class="hlp-input-message hlp-input-errormsg"><%= errorMsg %></p>
-<% } %>
+<div>
+  <% if (error && errorMsg) { %>
+    <p class="hlp-input-message hlp-input-errormsg"><%= errorMsg %></p>
+  <% } %>
+
+  <% if (!(onlyLogo)) { %>
+    <% if (text) { %><%= text %><% } else { %>
+      <p>Log In to 
+        <strong><%= company %></strong>
+       to get started using 
+        <strong><%= app %></strong>
+      .</p>
+    <% } %>
+  <% } %>
+</div>
