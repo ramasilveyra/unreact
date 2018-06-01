@@ -1,9 +1,9 @@
 import fs from 'fs';
 import path from 'path';
 import util from 'util';
-import { compile } from '../src/index';
+import { compile, compileDir, compileFile } from '../src/index';
 
-describe('while using react2ejs', () => {
+describe('while using react2ejs.compile()', () => {
   it('should convert react components of one tag to ejs', async () => {
     const { input, output } = await getTestCase('one-tag');
     const result = compile(input);
@@ -76,6 +76,29 @@ describe('while using react2ejs', () => {
   });
 });
 
+describe('while using react2ejs.compileFile()', () => {
+  it('should convert react components of one tag to ejs', async () => {
+    const fixture = 'compile-file';
+    const inputPath = getFixturePath(`${fixture}/input.js`);
+    const outputPath = getFixturePath(`${fixture}/output.ejs`);
+    await compileFile(inputPath, outputPath);
+    const output = await getFixture(`${fixture}/output.ejs`);
+    expect(output).toMatchSnapshot();
+  });
+});
+
+describe('while using react2ejs.compileDir()', () => {
+  it('should convert react components of one tag to ejs', async () => {
+    const fixture = 'compile-dir';
+    const inputOutputPath = getFixturePath(fixture);
+    await compileDir(inputOutputPath, inputOutputPath);
+    const Nested = await getFixture(`${fixture}/Nested.ejs`);
+    const Simple = await getFixture(`${fixture}/Simple.ejs`);
+    expect(Nested).toMatchSnapshot();
+    expect(Simple).toMatchSnapshot();
+  });
+});
+
 async function getTestCase(folder) {
   const input = await getFixture(`${folder}/input.js`);
   const output = await getFixture(`${folder}/output.ejs`);
@@ -85,7 +108,12 @@ async function getTestCase(folder) {
 const readFileAsync = util.promisify(fs.readFile);
 
 async function getFixture(file) {
-  const filePath = path.resolve(__dirname, 'fixtures', file);
+  const filePath = getFixturePath(file);
   const fileContent = await readFileAsync(filePath, { encoding: 'utf8' });
   return fileContent;
+}
+
+function getFixturePath(file) {
+  const filePath = path.resolve(__dirname, 'fixtures', file);
+  return filePath;
 }

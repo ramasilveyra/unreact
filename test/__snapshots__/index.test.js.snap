@@ -1,0 +1,20 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`while using react2ejs.compileDir() should convert react components of one tag to ejs 1`] = `
+"<div>
+  <div>
+    <span></span>
+  </div>
+</div>
+"
+`;
+
+exports[`while using react2ejs.compileDir() should convert react components of one tag to ejs 2`] = `
+"<div></div>
+"
+`;
+
+exports[`while using react2ejs.compileFile() should convert react components of one tag to ejs 1`] = `
+"<div></div>
+"
+`;

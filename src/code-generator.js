@@ -33,7 +33,7 @@ function codeGenerator(node, level = 0, removeEmptyLine = false) {
       return indent(
         generateCondition(
           node.test,
-          codeGenerator(node.consequent, level + 1, removeEmptyLine, removeEmptyLine),
+          codeGenerator(node.consequent, level + 1, removeEmptyLine),
           node.alternate && codeGenerator(node.alternate, level + 1, removeEmptyLine)
         ),
         level,
@@ -126,7 +126,7 @@ function generateInterpolationEscaped(value) {
   return `<%= ${value} %>`;
 }
 
-function indent(str, level = 0, removeEmptyLine = false) {
+function indent(str, level, removeEmptyLine) {
   const indentChar = ' ';
   const indentLength = 2;
   const startIndentNumber = level * indentLength;

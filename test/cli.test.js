@@ -1,0 +1,136 @@
+import pkg from '../package.json';
+
+let react2ejsCli = null;
+let compileFile = null;
+let compileDir = null;
+
+describe('while using react2ejs cli', () => {
+  beforeAll(() => {
+    jest.mock('../src/index', () => ({
+      compileFile: jest.fn((i, o, p) => {
+        p();
+        return Promise.resolve();
+      }),
+      compileDir: jest.fn((i, o, p) => {
+        p();
+        return Promise.resolve();
+      })
+    }));
+    jest.mock('ora', () =>
+      jest.fn().mockImplementation(() => ({
+        stopAndPersist: jest.fn(),
+        start: jest.fn(),
+        succeed: jest.fn(),
+        fail: jest.fn()
+      }))
+    );
+    const react2ejs = require('../src/index');
+    react2ejsCli = require('../src/cli').default;
+    compileFile = react2ejs.compileFile;
+    compileDir = react2ejs.compileDir;
+  });
+
+  beforeEach(() => {
+    /* eslint-disable no-console */
+    process.exit = jest.fn().mockReset();
+    console.log = jest.fn().mockReset();
+    compileFile.mockClear();
+    compileDir.mockClear();
+  });
+
+  it('should log initial message when no argument is passed', () => {
+    react2ejsCli([]);
+    expect(process.exit.mock.calls.length).toEqual(0);
+    expect(console.log.mock.calls.length).toEqual(1);
+    expect(console.log.mock.calls[0][0]).toBe(
+      `\u001b[1m\u001b[37m${pkg.name} v${pkg.version}\u001b[39m\u001b[22m`
+    );
+  });
+
+  it('should log version and initial message with "-v" or "--version"', () => {
+    react2ejsCli(['-v']);
+    react2ejsCli(['--version']);
+    expect(process.exit.mock.calls.length).toEqual(2);
+    expect(console.log.mock.calls.length).toEqual(4);
+    expect(console.log.mock.calls[0][0]).toBe(
+      `\u001b[1m\u001b[37m${pkg.name} v${pkg.version}\u001b[39m\u001b[22m`
+    );
+    expect(console.log.mock.calls[1][0]).toBe(pkg.version);
+  });
+
+  it('should compile file with "some-component.js -o some-component.ejs"', async () => {
+    const input = 'some-component.js';
+    const output = 'some-component.ejs';
+    const result = react2ejsCli([input, '-o', output]);
+    expect(process.exit.mock.calls.length).toEqual(0);
+    expect(console.log.mock.calls.length).toEqual(1);
+    expect(console.log.mock.calls[0][0]).toBe(
+      `\u001b[1m\u001b[37m${pkg.name} v${pkg.version}\u001b[39m\u001b[22m`
+    );
+    expect(compileFile.mock.calls.length).toEqual(1);
+    expect(compileFile.mock.calls[0][0]).toBe(input);
+    expect(compileFile.mock.calls[0][1]).toBe(output);
+    expect(typeof compileFile.mock.calls[0][2]).toBe('function');
+    await expect(result).resolves.toBeUndefined();
+  });
+
+  it('should log error and exit if compile file with "some-component.js -o some-component.ejs" fails', async () => {
+    const errorMsg = 'No such file';
+    compileFile.mockImplementation((i, o, p) => {
+      p();
+      return Promise.reject(new Error(errorMsg));
+    });
+    const input = 'some-component.js';
+    const output = 'some-component.ejs';
+    const result = react2ejsCli([input, '-o', output]);
+    expect(console.log.mock.calls.length).toEqual(1);
+    expect(console.log.mock.calls[0][0]).toBe(
+      `\u001b[1m\u001b[37m${pkg.name} v${pkg.version}\u001b[39m\u001b[22m`
+    );
+    expect(compileFile.mock.calls.length).toEqual(1);
+    expect(compileFile.mock.calls[0][0]).toBe(input);
+    expect(compileFile.mock.calls[0][1]).toBe(output);
+    expect(typeof compileFile.mock.calls[0][2]).toBe('function');
+    await expect(result).resolves.toBeUndefined();
+    expect(process.exit.mock.calls.length).toEqual(1);
+    expect(process.exit.mock.calls[0][0]).toEqual(1);
+  });
+
+  it('should compile dir with "components -O build"', async () => {
+    const input = 'components';
+    const output = 'build';
+    const result = react2ejsCli([input, '-O', output]);
+    expect(process.exit.mock.calls.length).toEqual(0);
+    expect(console.log.mock.calls.length).toEqual(1);
+    expect(console.log.mock.calls[0][0]).toBe(
+      `\u001b[1m\u001b[37m${pkg.name} v${pkg.version}\u001b[39m\u001b[22m`
+    );
+    expect(compileDir.mock.calls.length).toEqual(1);
+    expect(compileDir.mock.calls[0][0]).toBe(input);
+    expect(compileDir.mock.calls[0][1]).toBe(output);
+    expect(typeof compileDir.mock.calls[0][2]).toBe('function');
+    await expect(result).resolves.toBeUndefined();
+  });
+
+  it('should log error and exit if compile dir with "components -O build" fails', async () => {
+    const errorMsg = 'No such file';
+    compileDir.mockImplementation((i, o, p) => {
+      p();
+      return Promise.reject(new Error(errorMsg));
+    });
+    const input = 'components';
+    const output = 'build';
+    const result = react2ejsCli([input, '-O', output]);
+    expect(console.log.mock.calls.length).toEqual(1);
+    expect(console.log.mock.calls[0][0]).toBe(
+      `\u001b[1m\u001b[37m${pkg.name} v${pkg.version}\u001b[39m\u001b[22m`
+    );
+    expect(compileDir.mock.calls.length).toEqual(1);
+    expect(compileDir.mock.calls[0][0]).toBe(input);
+    expect(compileDir.mock.calls[0][1]).toBe(output);
+    expect(typeof compileDir.mock.calls[0][2]).toBe('function');
+    await expect(result).resolves.toBeUndefined();
+    expect(process.exit.mock.calls.length).toEqual(1);
+    expect(process.exit.mock.calls[0][0]).toEqual(1);
+  });
+});

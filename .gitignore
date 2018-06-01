@@ -60,3 +60,6 @@ typings/
 
 # build dir
 build
+
+test/fixtures/compile-file/*.ejs
+test/fixtures/compile-dir/*.ejs
