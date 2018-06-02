@@ -59,7 +59,7 @@ unreact src --out-dir views
 
 <h2 align="center">Limitations</h2>
 
-*ALPHA SOFTWARE*
+**ALPHA: things may not work**
 
 - Only works with functional components and very simple ones.
 
