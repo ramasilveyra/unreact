@@ -1,13 +1,13 @@
 import isSelfClosing from 'is-self-closing';
 import {
+  attributeName,
+  conditionName,
   elementName,
+  interpolationEscapedName,
+  iterationName,
   mixinName,
   rootName,
-  textName,
-  attributeName,
-  interpolationEscapedName,
-  conditionName,
-  iterationName
+  textName
 } from './ast';
 
 function codeGenerator(node, level = 0, removeEmptyLine = false) {
