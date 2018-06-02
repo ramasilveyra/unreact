@@ -25,6 +25,9 @@ function optimize(ast, reactComponentsTable) {
         const isRC = !htmlTags.includes(node.tagName);
         if (isRC) {
           const children = node.children;
+          if (!reactComponentsTable[node.tagName]) {
+            return;
+          }
           const componentNode = Object.assign({}, reactComponentsTable[node.tagName].node);
           removeNode(
             reactComponentsTable[node.tagName].parent,
