@@ -6,17 +6,13 @@ function isFunctionalReactComponent(path) {
   const isVariableDeclaration = t.isVariableDeclaration(node);
   const isFunctionDeclaration = t.isFunctionDeclaration(node);
   if (!isVariableDeclaration && !isFunctionDeclaration) {
-    return false;
+    return { is: false, name: null };
   }
   const name = isVariableDeclaration ? node.declarations[0].id.name : node.id.name;
-  const startsWithCapitalLetter = name[0] === name[0].toUpperCase();
-  if (!startsWithCapitalLetter) {
-    return false;
-  }
   if (isJSXElementOrReactCreateElement(path)) {
-    return true;
+    return { is: true, name };
   }
-  return false;
+  return { is: false, name: null };
 }
 
 function isJSXElementOrReactCreateElement(path) {

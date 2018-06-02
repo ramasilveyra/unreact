@@ -9,8 +9,8 @@ import codeGenerator from './code-generator';
 
 export function compile(inputCode) {
   const oldAst = parser(inputCode);
-  const newAst = transformation(oldAst);
-  const code = codeGenerator(newAst);
+  const { ast: newAst, reactComponentsTable } = transformation(oldAst);
+  const code = codeGenerator(newAst, reactComponentsTable);
   return code;
 }
 

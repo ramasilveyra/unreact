@@ -6,6 +6,6 @@ describe('while using utils', () => {
     expect(() => addToContext({ type: 'IVALID' }, {})).toThrow();
   });
   it(`isFunctionalReactComponent() should return false with non valid react component node`, () => {
-    expect(isFunctionalReactComponent({ node: null })).toBe(false);
+    expect(isFunctionalReactComponent({ node: null })).toMatchObject({ is: false, name: null });
   });
 });

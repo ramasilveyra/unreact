@@ -84,6 +84,11 @@ describe('while using unreact.compile()', () => {
     const result = compile(input);
     expect(result).toBe(output);
   });
+  it('should convert react components to ejs and inline others components', async () => {
+    const { input, output } = await getTestCase('inlining');
+    const result = compile(input);
+    expect(result).toBe(output);
+  });
 });
 
 describe('while using unreact.compileFile()', () => {

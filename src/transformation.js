@@ -18,6 +18,7 @@ import addToContext from './utils/add-to-context';
 
 function transformation(oldAst) {
   const newAst = createRoot();
+  const reactComponentsTable = {};
 
   setContext(oldAst, newAst);
 
@@ -155,30 +156,28 @@ function transformation(oldAst) {
 
   const generalVisitor = {
     VariableDeclaration(path) {
-      const isRC = isFunctionalReactComponent(path);
-      if (isRC) {
-        const context = getContext(path);
-        const mixin = createMixin();
-        addToContext(context, mixin);
-        setContext(path, mixin);
-        path.traverse(reactComponentVisitor);
-      }
+      checkForReactComponent(path);
     },
     FunctionDeclaration(path) {
-      const isRC = isFunctionalReactComponent(path);
-      if (isRC) {
-        const context = getContext(path);
-        const mixin = createMixin();
-        addToContext(context, mixin);
-        setContext(path, mixin);
-        path.traverse(reactComponentVisitor);
-      }
+      checkForReactComponent(path);
     }
   };
 
   babelTraverse(oldAst, generalVisitor, null);
 
-  return newAst;
+  return { ast: newAst, reactComponentsTable };
+
+  function checkForReactComponent(path) {
+    const { is, name } = isFunctionalReactComponent(path);
+    if (is) {
+      const context = getContext(path);
+      const mixin = createMixin();
+      addToContext(context, mixin);
+      setContext(path, mixin);
+      reactComponentsTable[name] = { node: mixin, parent: context };
+      path.traverse(reactComponentVisitor);
+    }
+  }
 }
 
 export default transformation;
