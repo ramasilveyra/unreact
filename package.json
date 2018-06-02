@@ -9,10 +9,10 @@
     "clean": "del ./build",
     "lint": "eslint .",
     "precommit": "lint-staged",
-    "prepublish": "yarn run clean --silent && yarn run build --silent",
-    "test-ci-partial": "yarn run test-coverage --silent",
-    "test-ci": "yarn run lint --silent && yarn run test-ci-partial --silent && codecov",
-    "test-coverage": "yarn run jest --silent -- --coverage",
+    "prepublish": "yarn run clean && yarn run build",
+    "test-ci-partial": "yarn run test-coverage",
+    "test-ci": "yarn run lint && yarn run test-ci-partial && codecov",
+    "test-coverage": "yarn run jest --coverage",
     "test": "jest"
   },
   "author": {
