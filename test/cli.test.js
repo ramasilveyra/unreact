@@ -24,8 +24,8 @@ describe('while using react2ejs cli', () => {
         fail: jest.fn()
       }))
     );
-    const react2ejs = require('../src/index');
-    react2ejsCli = require('../src/cli').default;
+    const react2ejs = require('../src/index'); // eslint-disable-line global-require
+    react2ejsCli = require('../src/cli').default; // eslint-disable-line global-require
     compileFile = react2ejs.compileFile;
     compileDir = react2ejs.compileDir;
   });

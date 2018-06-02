@@ -79,6 +79,11 @@ describe('while using react2ejs.compile()', () => {
     const result = compile(input);
     expect(result).toBe(output);
   });
+  it('should convert react components with asdsad expression inside conditional expression to ejs', async () => {
+    const { input, output } = await getTestCase('react-component-detection');
+    const result = compile(input);
+    expect(result).toBe(output);
+  });
 });
 
 describe('while using react2ejs.compileFile()', () => {

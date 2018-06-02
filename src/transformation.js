@@ -11,13 +11,10 @@ import {
   createInterpolationEscaped,
   createMixin,
   createRoot,
-  createText,
-  rootName,
-  elementName,
-  conditionName,
-  iterationName,
-  mixinName
+  createText
 } from './ast';
+import isFunctionalReactComponent from './utils/is-functional-react-component';
+import addToContext from './utils/add-to-context';
 
 function transformation(oldAst) {
   const newAst = createRoot();
@@ -54,7 +51,7 @@ function transformation(oldAst) {
       if (t.isLogicalExpression(expression, { operator: '&&' })) {
         return;
       }
-      if (t.isLogicalExpression(path.node, { operator: '||' })) {
+      if (t.isLogicalExpression(expression, { operator: '||' })) {
         return;
       }
       if (t.isConditionalExpression(expression)) {
@@ -100,11 +97,9 @@ function transformation(oldAst) {
         addToContext(context, attribute, 'attributes');
         return;
       }
-      if (t.isJSXExpressionContainer(valueNode)) {
-        const { code } = babelGenerator(valueNode.expression);
-        const attribute = createAttribute(name, code, true);
-        addToContext(context, attribute, 'attributes');
-      }
+      const { code } = babelGenerator(valueNode.expression);
+      const attribute = createAttribute(name, code, true);
+      addToContext(context, attribute, 'attributes');
     },
     CallExpression(path) {
       const callee = path.node.callee;
@@ -127,20 +122,18 @@ function transformation(oldAst) {
         return;
       }
       const context = getContext(path);
-      if (t.isLogicalExpression(path.node, { operator: '&&' })) {
+      if (path.node.operator === '&&') {
         const { code } = babelGenerator(path.node.left);
         const condition = createCondition(code);
         addToContext(context, condition);
         setContext(path, condition);
         return;
       }
-      if (t.isLogicalExpression(path.node, { operator: '||' })) {
-        const { code } = babelGenerator(path.node.left);
-        const interpolationEscaped = createInterpolationEscaped(code);
-        const condition = createCondition(code, interpolationEscaped);
-        addToContext(context, condition);
-        setContext(path, condition);
-      }
+      const { code } = babelGenerator(path.node.left);
+      const interpolationEscaped = createInterpolationEscaped(code);
+      const condition = createCondition(code, interpolationEscaped);
+      addToContext(context, condition);
+      setContext(path, condition);
     },
     ConditionalExpression(path) {
       const context = getContext(path);
@@ -170,6 +163,16 @@ function transformation(oldAst) {
         setContext(path, mixin);
         path.traverse(reactComponentVisitor);
       }
+    },
+    FunctionDeclaration(path) {
+      const isRC = isFunctionalReactComponent(path);
+      if (isRC) {
+        const context = getContext(path);
+        const mixin = createMixin();
+        addToContext(context, mixin);
+        setContext(path, mixin);
+        path.traverse(reactComponentVisitor);
+      }
     }
   };
 
@@ -179,37 +182,6 @@ function transformation(oldAst) {
 }
 
 export default transformation;
-
-// Note: this makes a lot of assumptions based on common conventions, it's not accurate.
-function isFunctionalReactComponent(path) {
-  const node = path.node;
-  const isVariableDeclaration = t.isVariableDeclaration(node);
-  const isFunctionDeclaration = t.isFunctionDeclaration(node);
-  if (!isVariableDeclaration && !isFunctionDeclaration) {
-    return false;
-  }
-  const name = isVariableDeclaration ? node.declarations[0].id.name : node.id.name;
-  const startsWithCapitalLetter = name[0] === name[0].toUpperCase();
-  if (!startsWithCapitalLetter) {
-    return false;
-  }
-  if (isJSXElementOrReactCreateElement(path)) {
-    return true;
-  }
-  return false;
-}
-
-function isJSXElementOrReactCreateElement(path) {
-  let visited = false;
-
-  path.traverse({
-    JSXElement() {
-      visited = true;
-    }
-  });
-
-  return visited;
-}
 
 function setContext(path, context) {
   if (path.type === 'File') {
@@ -225,32 +197,6 @@ function getContext(path) {
   return context;
 }
 
-function addToContext(context, node, member) {
-  if (member) {
-    addNode(context, node, member);
-    return;
-  }
-  switch (context.type) {
-    case rootName:
-    case elementName:
-    case mixinName:
-      addNode(context, node, 'children');
-      break;
-    case iterationName:
-      addNode(context, node, 'body');
-      break;
-    case conditionName:
-      if (context.consequent) {
-        addNode(context, node, 'alternate');
-      } else {
-        addNode(context, node, 'consequent');
-      }
-      break;
-    default:
-      throw new Error(`Don't know how to add node to ${context.type}`);
-  }
-}
-
 function isMapIterator(node) {
   const callee = node.callee;
   if (!callee || !callee.property) {
@@ -258,14 +204,6 @@ function isMapIterator(node) {
   }
   const is = callee.property.name === 'map';
   return is;
-}
-
-function addNode(context, node, member) {
-  if (Array.isArray(context[member])) {
-    context[member].push(node);
-    return;
-  }
-  context[member] = node;
 }
 
 function shouldIgnoreAttr(name) {
