@@ -12,13 +12,16 @@
 
 <h1 align="center">Convert React Components to EJS or Pug (unreact)</h1>
 
-<p align="center"><a href="https://youtu.be/hHd7aqj3LF4?t=22s">Why? There is no why.</a> Jokes aside, <strong><a href="https://github.com/ramasilveyra/templating-benchmarks/tree/feat/add-ejs#performance">EJS can be 94% faster</a></strong>.</p>
+<blockquote align="center">The future is React without React.</blockquote>
+
+<p align="center"><strong><a href="https://github.com/ramasilveyra/templating-benchmarks/tree/feat/add-ejs#performance">EJS and Pug templates engines can be 94%+ faster than <code>ReactDOMServer.renderToString</code></a></strong>.</p>
 
 <h2 align="center">Table of Contents</h2>
 
 - [Install](#install)
 - [Usage](#usage)
 - [Limitations](#limitations)
+- [Future](#future)
 - [Contribute](#contribute)
 - [License](#license)
 
@@ -40,14 +43,14 @@ $ npm install --save-dev unreact
 
 <h2 align="center">Usage</h2>
 
-### Convert Files
+### Convert Files (`--out-file`/`-o`)
 
 ```bash
 
 unreact src/button.js --out-file views/button.ejs
 ```
 
-### Convert Directories
+### Convert Directories (`--out-dir`/`-O`)
 
 ```bash
 
@@ -56,8 +59,16 @@ unreact src --out-dir views
 
 <h2 align="center">Limitations</h2>
 
-- Only works with functional components.
-- Only works with one React Component per file.
+*ALPHA SOFTWARE*
+
+- Only works with functional components and very simple ones.
+
+<h2 align="center">Future</h2>
+
+Check the work bridging React and Prepack:
+- https://github.com/facebook/prepack/pulls?utf8=%E2%9C%93&q=is%3Apr+react
+- https://twitter.com/trueadm/status/1002812303824314369
+- https://github.com/trueadm/ssr-with-prepack-hackathon 
 
 <h2 align="center">Contribute</h2>
 
