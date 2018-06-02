@@ -32,7 +32,7 @@ export async function compileFile(inputFile, outputFile, progress = () => {}) {
 export async function compileDir(inputDir, outputDir, progress = () => {}) {
   const inputDirPath = path.resolve(process.cwd(), inputDir);
   const outputDirPath = path.resolve(process.cwd(), outputDir);
-  const globInputDirPath = path.join(inputDirPath, '/**/*.{js,jsx}');
+  const globInputDirPath = path.join(inputDirPath, '/**/*.{js,jsx,mjs}');
   const filePaths = await globby(globInputDirPath);
   await Promise.all(
     filePaths.map(filePath => {
