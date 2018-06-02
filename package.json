@@ -1,7 +1,7 @@
 {
-  "name": "react2ejs",
+  "name": "unreact",
   "version": "1.0.0-alpha.0",
-  "description": "Convert React Components to EJS",
+  "description": "Convert React Components to EJS or Pug",
   "main": "build/index.js",
   "scripts": {
     "build": "babel src -d build -s",
@@ -24,14 +24,15 @@
     "node": ">=8"
   },
   "bin": {
-    "react2ejs": "bin/react2ejs.js"
+    "unreact": "bin/unreact.js"
   },
   "files": [
     "build"
   ],
-  "repository": "git@github.com:ramasilveyra/react2ejs.git",
+  "repository": "git@github.com:ramasilveyra/unreact.git",
   "keywords": [
     "ejs",
+    "pug",
     "react",
     "convert"
   ],

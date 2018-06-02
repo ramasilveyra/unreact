@@ -3,7 +3,7 @@ import path from 'path';
 import util from 'util';
 import { compile, compileDir, compileFile } from '../src/index';
 
-describe('while using react2ejs.compile()', () => {
+describe('while using unreact.compile()', () => {
   it('should convert react components of one tag to ejs', async () => {
     const { input, output } = await getTestCase('one-tag');
     const result = compile(input);
@@ -86,7 +86,7 @@ describe('while using react2ejs.compile()', () => {
   });
 });
 
-describe('while using react2ejs.compileFile()', () => {
+describe('while using unreact.compileFile()', () => {
   it('should convert react components of one tag to ejs', async () => {
     const fixture = 'compile-file';
     const inputPath = getFixturePath(`${fixture}/input.js`);
@@ -97,7 +97,7 @@ describe('while using react2ejs.compileFile()', () => {
   });
 });
 
-describe('while using react2ejs.compileDir()', () => {
+describe('while using unreact.compileDir()', () => {
   it('should convert react components of one tag to ejs', async () => {
     const fixture = 'compile-dir';
     const inputOutputPath = getFixturePath(fixture);

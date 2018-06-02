@@ -5,7 +5,7 @@ import ora from 'ora';
 import { compileFile, compileDir } from './index';
 import pkg from '../package.json';
 
-export default function react2ejsCLI(argv) {
+export default function unreactCLI(argv) {
   console.log(chalk.bold.white(`${pkg.name} v${pkg.version}`));
 
   const parsedArgv = yargs(argv)

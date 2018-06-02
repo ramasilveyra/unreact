@@ -1,10 +1,10 @@
 import pkg from '../package.json';
 
-let react2ejsCli = null;
+let unreactCli = null;
 let compileFile = null;
 let compileDir = null;
 
-describe('while using react2ejs cli', () => {
+describe('while using unreact cli', () => {
   beforeAll(() => {
     jest.mock('../src/index', () => ({
       compileFile: jest.fn((i, o, p) => {
@@ -24,10 +24,10 @@ describe('while using react2ejs cli', () => {
         fail: jest.fn()
       }))
     );
-    const react2ejs = require('../src/index'); // eslint-disable-line global-require
-    react2ejsCli = require('../src/cli').default; // eslint-disable-line global-require
-    compileFile = react2ejs.compileFile;
-    compileDir = react2ejs.compileDir;
+    const unreact = require('../src/index'); // eslint-disable-line global-require
+    unreactCli = require('../src/cli').default; // eslint-disable-line global-require
+    compileFile = unreact.compileFile;
+    compileDir = unreact.compileDir;
   });
 
   beforeEach(() => {
@@ -39,7 +39,7 @@ describe('while using react2ejs cli', () => {
   });
 
   it('should log initial message when no argument is passed', () => {
-    react2ejsCli([]);
+    unreactCli([]);
     expect(process.exit.mock.calls.length).toEqual(0);
     expect(console.log.mock.calls.length).toEqual(1);
     expect(console.log.mock.calls[0][0]).toBe(
@@ -48,8 +48,8 @@ describe('while using react2ejs cli', () => {
   });
 
   it('should log version and initial message with "-v" or "--version"', () => {
-    react2ejsCli(['-v']);
-    react2ejsCli(['--version']);
+    unreactCli(['-v']);
+    unreactCli(['--version']);
     expect(process.exit.mock.calls.length).toEqual(2);
     expect(console.log.mock.calls.length).toEqual(4);
     expect(console.log.mock.calls[0][0]).toBe(
@@ -61,7 +61,7 @@ describe('while using react2ejs cli', () => {
   it('should compile file with "some-component.js -o some-component.ejs"', async () => {
     const input = 'some-component.js';
     const output = 'some-component.ejs';
-    const result = react2ejsCli([input, '-o', output]);
+    const result = unreactCli([input, '-o', output]);
     expect(process.exit.mock.calls.length).toEqual(0);
     expect(console.log.mock.calls.length).toEqual(1);
     expect(console.log.mock.calls[0][0]).toBe(
@@ -82,7 +82,7 @@ describe('while using react2ejs cli', () => {
     });
     const input = 'some-component.js';
     const output = 'some-component.ejs';
-    const result = react2ejsCli([input, '-o', output]);
+    const result = unreactCli([input, '-o', output]);
     expect(console.log.mock.calls.length).toEqual(1);
     expect(console.log.mock.calls[0][0]).toBe(
       `\u001b[1m\u001b[37m${pkg.name} v${pkg.version}\u001b[39m\u001b[22m`
@@ -99,7 +99,7 @@ describe('while using react2ejs cli', () => {
   it('should compile dir with "components -O build"', async () => {
     const input = 'components';
     const output = 'build';
-    const result = react2ejsCli([input, '-O', output]);
+    const result = unreactCli([input, '-O', output]);
     expect(process.exit.mock.calls.length).toEqual(0);
     expect(console.log.mock.calls.length).toEqual(1);
     expect(console.log.mock.calls[0][0]).toBe(
@@ -120,7 +120,7 @@ describe('while using react2ejs cli', () => {
     });
     const input = 'components';
     const output = 'build';
-    const result = react2ejsCli([input, '-O', output]);
+    const result = unreactCli([input, '-O', output]);
     expect(console.log.mock.calls.length).toEqual(1);
     expect(console.log.mock.calls[0][0]).toBe(
       `\u001b[1m\u001b[37m${pkg.name} v${pkg.version}\u001b[39m\u001b[22m`
