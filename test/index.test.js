@@ -6,87 +6,93 @@ import { compile, compileDir, compileFile } from '../src/index';
 describe('while using unreact.compile()', () => {
   it('should convert react components of one tag to ejs', async () => {
     const { input, output } = await getTestCase('one-tag');
-    const result = compile(input);
+    const result = await compile(input);
     expect(result).toBe(output);
   });
   it('should convert react components of multiple nested tags to ejs', async () => {
     const { input, output } = await getTestCase('nested-tags');
-    const result = compile(input);
+    const result = await compile(input);
     expect(result).toBe(output);
   });
   it('should convert react components of one tag with text to ejs', async () => {
     const { input, output } = await getTestCase('with-text');
-    const result = compile(input);
+    const result = await compile(input);
     expect(result).toBe(output);
   });
   it('should convert react components of one tag with var expression to ejs', async () => {
     const { input, output } = await getTestCase('with-var-expression');
-    const result = compile(input);
+    const result = await compile(input);
     expect(result).toBe(output);
   });
   it('should convert react components of one tag with complex expression to ejs', async () => {
     const { input, output } = await getTestCase('with-complex-expression');
-    const result = compile(input);
+    const result = await compile(input);
     expect(result).toBe(output);
   });
   it('should convert react components of a self closing tag to ejs', async () => {
     const { input, output } = await getTestCase('self-closing-tag');
-    const result = compile(input);
+    const result = await compile(input);
     expect(result).toBe(output);
   });
   it('should convert react components with attributes to ejs', async () => {
     const { input, output } = await getTestCase('attrs');
-    const result = compile(input);
+    const result = await compile(input);
     expect(result).toBe(output);
   });
   it('should convert react components with boolean attributes to ejs', async () => {
     const { input, output } = await getTestCase('attrs-boolean');
-    const result = compile(input);
+    const result = await compile(input);
     expect(result).toBe(output);
   });
   it('should convert react components with var expression attributes to ejs', async () => {
     const { input, output } = await getTestCase('attrs-var-expression');
-    const result = compile(input);
+    const result = await compile(input);
     expect(result).toBe(output);
   });
   it('should convert react components with complex expression attributes to ejs', async () => {
     const { input, output } = await getTestCase('attrs-complex-expression');
-    const result = compile(input);
+    const result = await compile(input);
     expect(result).toBe(output);
   });
   it('should convert react components with logical expression to ejs', async () => {
     const { input, output } = await getTestCase('logical-expression');
-    const result = compile(input);
+    const result = await compile(input);
     expect(result).toBe(output);
   });
   it('should convert react components with conditional expression to ejs', async () => {
     const { input, output } = await getTestCase('conditional-expression');
-    const result = compile(input);
+    const result = await compile(input);
     expect(result).toBe(output);
   });
   it('should convert react components with map iterator to ejs', async () => {
     const { input, output } = await getTestCase('iterator');
-    const result = compile(input);
+    const result = await compile(input);
     expect(result).toBe(output);
   });
   it('should convert react components to ejs and ignore unnecessary attributes', async () => {
     const { input, output } = await getTestCase('ignore-unnecessary-attrs');
-    const result = compile(input);
+    const result = await compile(input);
     expect(result).toBe(output);
   });
   it('should convert react components with logical expression inside conditional expression to ejs', async () => {
     const { input, output } = await getTestCase('logical-expr-inside-conditional-expr');
-    const result = compile(input);
+    const result = await compile(input);
     expect(result).toBe(output);
   });
   it('should convert react components with asdsad expression inside conditional expression to ejs', async () => {
     const { input, output } = await getTestCase('react-component-detection');
-    const result = compile(input);
+    const result = await compile(input);
     expect(result).toBe(output);
   });
   it('should convert react components to ejs and inline others components', async () => {
     const { input, output } = await getTestCase('inlining');
-    const result = compile(input);
+    const result = await compile(input);
+    expect(result).toBe(output);
+  });
+  it('should convert react components to ejs and inline others components in external files', async () => {
+    const inputPath = getFixturePath('inlining-files/input.js');
+    const { input, output } = await getTestCase('inlining-files');
+    const result = await compile(input, inputPath);
     expect(result).toBe(output);
   });
 });

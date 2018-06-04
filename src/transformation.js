@@ -18,13 +18,17 @@ import addToContext from './utils/add-to-context';
 
 function transformation(oldAst) {
   const newAst = createRoot();
-  const table = { components: {} };
+  const table = { components: {}, dependencies: {} };
 
   setContext(oldAst, newAst);
 
   const reactComponentVisitor = {
     JSXElement(path) {
       const tagName = path.node.openingElement.name.name;
+      const isFromDependency = table.dependencies[tagName];
+      if (isFromDependency) {
+        isFromDependency.isUsedAsRC = true;
+      }
       const element = createElement(tagName);
       const context = getContext(path);
       addToContext(context, element);
@@ -155,6 +159,12 @@ function transformation(oldAst) {
   };
 
   const generalVisitor = {
+    ImportDeclaration(path) {
+      const dependency = path.node.source.value;
+      const specifier = path.node.specifiers.find(node => t.isImportDefaultSpecifier(node)).local
+        .name;
+      table.dependencies[specifier] = { dependency };
+    },
     VariableDeclaration(path) {
       checkForReactComponent(path);
     },
@@ -171,7 +181,7 @@ function transformation(oldAst) {
     const { is, name } = isFunctionalReactComponent(path);
     if (is) {
       const context = getContext(path);
-      const mixin = createMixin();
+      const mixin = createMixin(name);
       addToContext(context, mixin);
       setContext(path, mixin);
       table.components[name] = { node: mixin, parent: context };

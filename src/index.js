@@ -1,28 +1,73 @@
 import fs from 'fs';
 import path from 'path';
 import util from 'util';
+import resolveFrom from 'resolve-from';
 import makeDir from 'make-dir';
 import globby from 'globby';
 import parser from './parser';
 import transformation from './transformation';
+import DependencyGraph from './deps-graph';
 import { codeGenerator, optimize } from './ejs';
 
-export function compile(inputCode) {
-  const oldAst = parser(inputCode);
-  const { ast: newAST, table } = transformation(oldAst);
-  const optimizedAST = optimize(newAST, table);
+const readFileAsync = util.promisify(fs.readFile);
+const writeFileAsync = util.promisify(fs.writeFile);
+
+export async function compile(inputCode, inputFile) {
+  const { ast, table } = parseTransformOptimize(inputCode);
+  if (inputFile) {
+    const { bundleAST, bundleTable } = await resolveDependencies(inputFile, ast, table);
+    const optimizedAST = optimize(bundleAST, bundleTable);
+    const code = codeGenerator(optimizedAST);
+    return code;
+  }
+  const optimizedAST = optimize(ast, table);
   const code = codeGenerator(optimizedAST);
   return code;
 }
 
-const readFileAsync = util.promisify(fs.readFile);
-const writeFileAsync = util.promisify(fs.writeFile);
+function parseTransformOptimize(inputCode) {
+  const oldAst = parser(inputCode);
+  const { ast, table } = transformation(oldAst);
+  const optimizedAST = optimize(ast, table);
+  return { ast: optimizedAST, table };
+}
+
+async function resolveDependencies(moduleFile, moduleAST, moduleTable) {
+  const depGraph = new DependencyGraph();
+  depGraph.addModule(moduleFile, moduleAST, moduleTable);
+  await parseModule(moduleFile, moduleTable, depGraph);
+  const preBundleTable = depGraph.modules.map(dep => dep.table);
+  const bundleTable = preBundleTable.reduce(
+    (acc, item) => ({
+      components: Object.assign({}, acc.components, item.components),
+      dependencies: Object.assign({}, acc.dependencies, item.dependencies)
+    }),
+    {}
+  );
+  return { bundleAST: moduleAST, bundleTable };
+}
+
+async function parseModule(moduleFile, moduleTable, depGraph) {
+  await Promise.all(
+    Object.values(moduleTable.dependencies).map(async dep => {
+      if (dep.isUsedAsRC) {
+        const depDirPath = path.dirname(moduleFile);
+        const depFilePath = await resolveFrom(depDirPath, dep.dependency);
+        const depCode = await readFileAsync(depFilePath, { encoding: 'utf8' });
+        const { ast: depAST, table: depTable } = parseTransformOptimize(depCode);
+        depGraph.addModule(depFilePath, depAST, depTable);
+        depGraph.addDependency(moduleFile, depFilePath);
+        await parseModule(depFilePath, depTable, depGraph);
+      }
+    })
+  );
+}
 
 export async function compileFile(inputFile, outputFile, progress = () => {}) {
   const inputFilePath = path.resolve(process.cwd(), inputFile);
   const outputFilePath = path.resolve(process.cwd(), outputFile);
   const inputCode = await readFileAsync(inputFilePath, { encoding: 'utf8' });
-  const code = compile(inputCode);
+  const code = await compile(inputCode, inputFilePath);
   const outputFilePathDir = path.dirname(outputFilePath);
   await makeDir(outputFilePathDir);
   await writeFileAsync(outputFilePath, code);

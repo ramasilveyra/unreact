@@ -73,7 +73,8 @@ export const createIteration = ({ iterable, currentValue, index, array, body = n
 
 // Template engine syntax for mixin.
 export const mixinName = 'Mixin';
-export const createMixin = () => ({
+export const createMixin = name => ({
   type: mixinName,
+  name,
   children: []
 });

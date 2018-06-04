@@ -15,20 +15,24 @@ function optimize(ast, table) {
   traverser(ast, {
     Element: {
       exit(node) {
-        const isRC = !htmlTags.includes(node.tagName);
-        if (isRC) {
+        const name = node.tagName;
+        const isRC = !htmlTags.includes(name);
+        const tableRC = table.components[name];
+        if (isRC && tableRC) {
           const children = node.children;
-          if (!table.components[node.tagName]) {
-            return;
-          }
-          const componentNode = Object.assign({}, table.components[node.tagName].node);
-          removeNode(table.components[node.tagName].parent, table.components[node.tagName].node);
+          const componentNode = Object.assign({}, tableRC.node);
+          // Remove React Components in the same file.
+          removeNode(tableRC.parent, tableRC.node);
+          // Handle children
           if (children.length) {
             componentNode.children[0].children = children;
           }
+          // Convert Element in Mixin.
           Object.assign(node, componentNode);
           delete node.tagName;
           delete node.attributes;
+          // Check again if new Mixin has React Components.
+          optimize(node, table);
         }
       }
     }
@@ -40,8 +44,6 @@ export default optimize;
 
 function removeNode(parent, node) {
   switch (node.type) {
-    case rootName:
-    case elementName:
     case mixinName:
       node.children = node.children.filter(child => child === node);
       break;
@@ -60,9 +62,9 @@ function traverser(ast, visitor) {
   function traverseNode(node, parent) {
     const method = visitor[node.type];
 
-    if (method && method.enter) {
-      method.enter(node, parent);
-    }
+    // if (method && method.enter) {
+    //   method.enter(node, parent);
+    // }
 
     switch (node.type) {
       case rootName:
