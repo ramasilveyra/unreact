@@ -14,7 +14,7 @@
 
 <blockquote align="center">The future is React without React.</blockquote>
 
-<p align="center"><strong><a href="https://github.com/ramasilveyra/templating-benchmarks/tree/feat/add-ejs#performance">EJS and Pug templates engines can be 94%+ faster than <code>ReactDOMServer.renderToString</code></a></strong>.</p>
+<p align="center"><strong><a href="https://github.com/ramasilveyra/templating-benchmarks/tree/feat/add-ejs#performance">EJS and Pug templates engines can be between 1647% and 7083% faster than <code>ReactDOMServer.renderToString</code> (React 15)</a></strong>.</p>
 
 <h2 align="center">Table of Contents</h2>
 
