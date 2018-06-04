@@ -18,7 +18,7 @@ import addToContext from './utils/add-to-context';
 
 function transformation(oldAst) {
   const newAst = createRoot();
-  const reactComponentsTable = {};
+  const table = { components: {} };
 
   setContext(oldAst, newAst);
 
@@ -165,7 +165,7 @@ function transformation(oldAst) {
 
   babelTraverse(oldAst, generalVisitor, null);
 
-  return { ast: newAst, reactComponentsTable };
+  return { ast: newAst, table };
 
   function checkForReactComponent(path) {
     const { is, name } = isFunctionalReactComponent(path);
@@ -174,7 +174,7 @@ function transformation(oldAst) {
       const mixin = createMixin();
       addToContext(context, mixin);
       setContext(path, mixin);
-      reactComponentsTable[name] = { node: mixin, parent: context };
+      table.components[name] = { node: mixin, parent: context };
       path.traverse(reactComponentVisitor);
     }
   }

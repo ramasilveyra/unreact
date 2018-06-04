@@ -5,12 +5,13 @@ import makeDir from 'make-dir';
 import globby from 'globby';
 import parser from './parser';
 import transformation from './transformation';
-import codeGenerator from './code-generator';
+import { codeGenerator, optimize } from './ejs';
 
 export function compile(inputCode) {
   const oldAst = parser(inputCode);
-  const { ast: newAst, reactComponentsTable } = transformation(oldAst);
-  const code = codeGenerator(newAst, reactComponentsTable);
+  const { ast: newAST, table } = transformation(oldAst);
+  const optimizedAST = optimize(newAST, table);
+  const code = codeGenerator(optimizedAST);
   return code;
 }
 
