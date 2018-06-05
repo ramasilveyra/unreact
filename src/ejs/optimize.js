@@ -41,7 +41,9 @@ function optimize(ast, table) {
           delete node.tagName;
           delete node.attributes;
           // Inline props.
-          inlinepProps(node, propsToInline);
+          if (propsToInline) {
+            inlinepProps(node, propsToInline);
+          }
           // Check again if new Mixin has React Components.
           optimize(node, table);
         }
@@ -58,11 +60,11 @@ function inlinepProps(ast, props) {
     Attribute: {
       exit(node) {
         const propToInline = props.find(prop => prop.name === node.value);
-        if (propToInline && propToInline.value.expression) {
+        if (propToInline && propToInline.value && propToInline.value.expression) {
           node.value = propToInline.value.value;
           return;
         }
-        if (propToInline && propToInline.value.expression === false) {
+        if (propToInline && propToInline.value && propToInline.value.expression === false) {
           node.value = propToInline.value.value;
           node.expression = false;
         }
@@ -71,11 +73,11 @@ function inlinepProps(ast, props) {
     InterpolationEscaped: {
       exit(node, parent) {
         const propToInline = props.find(prop => prop.name === node.value);
-        if (propToInline && propToInline.value.expression) {
+        if (propToInline && propToInline.value && propToInline.value.expression) {
           node.value = propToInline.value.value;
           return;
         }
-        if (propToInline && propToInline.value.expression === false) {
+        if (propToInline && propToInline.value && propToInline.value.expression === false) {
           // convert node to string
           const text = createText(propToInline.value.value);
           Object.assign(node, text);

@@ -38,7 +38,7 @@ export default function unreactCLI(argv) {
       })
       .catch(err => {
         spinner.stopAndPersist();
-        spinner.fail(`${chalk.bold.red('error')} ${err.message}`);
+        spinner.fail(`${chalk.bold.red('error')} ${err.stack}`);
         process.exit(1);
       });
   }
