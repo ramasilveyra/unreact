@@ -178,10 +178,10 @@ function transformation(oldAst) {
   return { ast: newAst, table };
 
   function checkForReactComponent(path) {
-    const { is, name } = isFunctionalReactComponent(path);
+    const { is, name, props } = isFunctionalReactComponent(path);
     if (is) {
       const context = getContext(path);
-      const mixin = createMixin(name);
+      const mixin = createMixin(name, props);
       addToContext(context, mixin);
       setContext(path, mixin);
       table.components[name] = { node: mixin, parent: context };

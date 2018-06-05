@@ -79,7 +79,7 @@ describe('while using unreact.compile()', () => {
     const result = await compile(input);
     expect(result).toBe(output);
   });
-  it('should convert react components with asdsad expression inside conditional expression to ejs', async () => {
+  it('should convert all the supported react components to ejs', async () => {
     const { input, output } = await getTestCase('react-component-detection');
     const result = await compile(input);
     expect(result).toBe(output);
@@ -93,6 +93,11 @@ describe('while using unreact.compile()', () => {
     const inputPath = getFixturePath('inlining-files/input.js');
     const { input, output } = await getTestCase('inlining-files');
     const result = await compile(input, inputPath);
+    expect(result).toBe(output);
+  });
+  it('should convert react components to ejs and inline others components and theirs props', async () => {
+    const { input, output } = await getTestCase('inlining-props');
+    const result = await compile(input);
     expect(result).toBe(output);
   });
 });
