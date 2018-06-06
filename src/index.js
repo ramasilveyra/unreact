@@ -52,7 +52,7 @@ async function parseModule(moduleFile, moduleTable, depGraph) {
     Object.values(moduleTable.dependencies).map(async dep => {
       if (dep.isUsedAsRC) {
         const depDirPath = path.dirname(moduleFile);
-        const depFilePath = await resolveFrom(depDirPath, dep.dependency);
+        const depFilePath = await resolveFrom(depDirPath, dep.source);
         const depCode = await readFileAsync(depFilePath, { encoding: 'utf8' });
         const { ast: depAST, table: depTable } = parseTransformOptimize(depCode);
         depGraph.addModule(depFilePath, depAST, depTable);

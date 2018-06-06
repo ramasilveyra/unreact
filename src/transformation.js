@@ -14,7 +14,9 @@ import {
   createText
 } from './ast';
 import isFunctionalReactComponent from './utils/is-functional-react-component';
+import getReactComponentName from './utils/get-react-component-name';
 import addToContext from './utils/add-to-context';
+import getReactComponentProps from './utils/get-react-component-props';
 
 function transformation(oldAst) {
   const newAst = createRoot();
@@ -160,16 +162,23 @@ function transformation(oldAst) {
 
   const generalVisitor = {
     ImportDeclaration(path) {
-      const dependency = path.node.source.value;
+      const source = path.node.source.value;
       const specifier = path.node.specifiers.find(node => t.isImportDefaultSpecifier(node)).local
         .name;
-      table.dependencies[specifier] = { dependency };
+      table.dependencies[specifier] = { source };
     },
     VariableDeclaration(path) {
       checkForReactComponent(path);
     },
     FunctionDeclaration(path) {
       checkForReactComponent(path);
+    },
+    ExportDefaultDeclaration(path) {
+      const exportedComponent = path.node.declaration.name;
+      const component = table.components[exportedComponent];
+      if (component) {
+        component.defaultExport = true;
+      }
     }
   };
 
@@ -178,13 +187,18 @@ function transformation(oldAst) {
   return { ast: newAst, table };
 
   function checkForReactComponent(path) {
-    const { is, name, props } = isFunctionalReactComponent(path);
+    const is = isFunctionalReactComponent(path);
+    const name = getReactComponentName(path.node);
+    const defaultExport = t.isFunctionDeclaration(path.node)
+      ? t.isExportDefaultDeclaration(path.parent)
+      : false;
+    const props = getReactComponentProps(path.node);
     if (is) {
       const context = getContext(path);
       const mixin = createMixin(name, props);
       addToContext(context, mixin);
       setContext(path, mixin);
-      table.components[name] = { node: mixin, parent: context };
+      table.components[name] = { node: mixin, parent: context, defaultExport };
       path.traverse(reactComponentVisitor);
     }
   }

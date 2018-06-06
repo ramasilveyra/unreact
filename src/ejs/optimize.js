@@ -35,7 +35,9 @@ function optimize(ast, table) {
           // Clone Mixin.
           const componentNode = Object.assign({}, tableRC.node);
           // Remove React Components in the same file.
-          removeNode(tableRC.parent, tableRC.node);
+          if (!tableRC.defaultExport) {
+            removeNode(tableRC.parent, tableRC.node);
+          }
           // Convert Element in Mixin.
           Object.assign(node, componentNode);
           delete node.tagName;
