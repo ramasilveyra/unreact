@@ -22,8 +22,6 @@ function transformation(oldAst, inputFilePath) {
   const newAst = createRoot();
   const table = { components: {}, dependencies: {} };
 
-  setContext(oldAst, newAst);
-
   const reactComponentVisitor = {
     JSXElement(path) {
       const tagName = path.node.openingElement.name.name;
@@ -184,6 +182,9 @@ function transformation(oldAst, inputFilePath) {
 
   babelTraverse(oldAst, generalVisitor, null);
 
+  const mainComponent = Object.values(table.components).find(component => component.defaultExport);
+  addToContext(newAst, mainComponent.node);
+
   return { ast: newAst, table };
 
   function checkForReactComponent(path) {
@@ -194,13 +195,10 @@ function transformation(oldAst, inputFilePath) {
       : false;
     const props = getReactComponentProps(path.node);
     if (is) {
-      const context = getContext(path);
       const mixin = createMixin(name, props);
-      addToContext(context, mixin);
       setContext(path, mixin);
       table.components[name] = {
         node: mixin,
-        parent: context,
         defaultExport,
         createdFrom: inputFilePath
       };

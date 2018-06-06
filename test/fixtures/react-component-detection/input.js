@@ -19,4 +19,4 @@ function b() {
   return '';
 }
 
-export default Asd;
+export default Asd1;
