@@ -1,5 +1,6 @@
 /* eslint-disable no-param-reassign */
 import htmlTags from 'html-tags';
+import _ from 'lodash';
 import { createText } from '../ast';
 import traverser from '../traverser';
 
@@ -24,7 +25,7 @@ function optimize(ast, table) {
               };
             });
           // Clone Mixin.
-          const componentNode = Object.assign({}, tableRC.node);
+          const componentNode = _.merge({}, tableRC.node);
           // Convert Element in Mixin.
           Object.assign(node, componentNode);
           delete node.tagName;

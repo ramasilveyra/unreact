@@ -7,6 +7,8 @@ const List = ({ list }) => (
   <Container>
     <Notice />
     <ul>{list.map(item => <Item>{item}</Item>)}</ul>
+    <Container>Hola!</Container>
+    <Container>Chau!</Container>
   </Container>
 );
 
