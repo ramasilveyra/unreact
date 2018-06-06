@@ -18,7 +18,7 @@ function optimize(ast, table) {
       exit(node) {
         const name = node.tagName;
         const isRC = !htmlTags.includes(name);
-        const tableRC = table.components[name];
+        const tableRC = getTableComponent(name, table);
         if (isRC && tableRC) {
           // Generate collection of props name and value.
           const propsToInline =
@@ -56,6 +56,20 @@ function optimize(ast, table) {
 }
 
 export default optimize;
+
+function getTableComponent(name, table) {
+  if (table.components[name]) {
+    return table.components[name];
+  }
+  const tableDep = table.dependencies[name];
+  if (tableDep) {
+    const component = Object.values(table.components).find(
+      rc => rc.createdFrom === tableDep.path && rc.defaultExport
+    );
+    return component;
+  }
+  return null;
+}
 
 function inlinepProps(ast, props) {
   traverser(ast, {

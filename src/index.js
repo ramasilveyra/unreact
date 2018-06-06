@@ -13,7 +13,7 @@ const readFileAsync = util.promisify(fs.readFile);
 const writeFileAsync = util.promisify(fs.writeFile);
 
 export async function compile(inputCode, inputFile) {
-  const { ast, table } = parseTransformOptimize(inputCode);
+  const { ast, table } = parseTransformOptimize(inputCode, inputFile);
   if (inputFile) {
     const { bundleAST, bundleTable } = await resolveDependencies(inputFile, ast, table);
     const optimizedAST = optimize(bundleAST, bundleTable);
@@ -25,9 +25,9 @@ export async function compile(inputCode, inputFile) {
   return code;
 }
 
-function parseTransformOptimize(inputCode) {
+function parseTransformOptimize(inputCode, inputFile) {
   const oldAst = parser(inputCode);
-  const { ast, table } = transformation(oldAst);
+  const { ast, table } = transformation(oldAst, inputFile);
   const optimizedAST = optimize(ast, table);
   return { ast: optimizedAST, table };
 }
@@ -51,16 +51,22 @@ async function parseModule(moduleFile, moduleTable, depGraph) {
   await Promise.all(
     Object.values(moduleTable.dependencies).map(async dep => {
       if (dep.isUsedAsRC) {
-        const depDirPath = path.dirname(moduleFile);
-        const depFilePath = await resolveFrom(depDirPath, dep.source);
+        const depFilePath = await resolveFromFile(moduleFile, dep.source);
+        dep.path = depFilePath; // eslint-disable-line no-param-reassign
         const depCode = await readFileAsync(depFilePath, { encoding: 'utf8' });
-        const { ast: depAST, table: depTable } = parseTransformOptimize(depCode);
+        const { ast: depAST, table: depTable } = parseTransformOptimize(depCode, depFilePath);
         depGraph.addModule(depFilePath, depAST, depTable);
         depGraph.addDependency(moduleFile, depFilePath);
         await parseModule(depFilePath, depTable, depGraph);
       }
     })
   );
+}
+
+async function resolveFromFile(filePath, moduleId) {
+  const depDirPath = path.dirname(filePath);
+  const depFilePath = await resolveFrom(depDirPath, moduleId);
+  return depFilePath;
 }
 
 export async function compileFile(inputFile, outputFile, progress = () => {}) {

@@ -18,7 +18,7 @@ import getReactComponentName from './utils/get-react-component-name';
 import addToContext from './utils/add-to-context';
 import getReactComponentProps from './utils/get-react-component-props';
 
-function transformation(oldAst) {
+function transformation(oldAst, inputFilePath) {
   const newAst = createRoot();
   const table = { components: {}, dependencies: {} };
 
@@ -165,7 +165,7 @@ function transformation(oldAst) {
       const source = path.node.source.value;
       const specifier = path.node.specifiers.find(node => t.isImportDefaultSpecifier(node)).local
         .name;
-      table.dependencies[specifier] = { source };
+      table.dependencies[specifier] = { source, requiredFrom: inputFilePath };
     },
     VariableDeclaration(path) {
       checkForReactComponent(path);
@@ -198,7 +198,12 @@ function transformation(oldAst) {
       const mixin = createMixin(name, props);
       addToContext(context, mixin);
       setContext(path, mixin);
-      table.components[name] = { node: mixin, parent: context, defaultExport };
+      table.components[name] = {
+        node: mixin,
+        parent: context,
+        defaultExport,
+        createdFrom: inputFilePath
+      };
       path.traverse(reactComponentVisitor);
     }
   }
