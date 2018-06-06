@@ -100,6 +100,22 @@ function inlinepProps(ast, props) {
           node.iterable = propToInline.value.value;
         }
       }
+    },
+    Condition: {
+      exit(node) {
+        const propToInline = props.find(prop => prop.name === node.test);
+        if (propToInline && propToInline.value && propToInline.value.value === true) {
+          node.test = propToInline.value.value;
+          return;
+        }
+        if (propToInline && propToInline.value && propToInline.value.expression === true) {
+          node.test = propToInline.value.value;
+          return;
+        }
+        if (propToInline && propToInline.value && propToInline.value.expression === false) {
+          node.test = `"${propToInline.value.value}"`;
+        }
+      }
     }
   });
 }
