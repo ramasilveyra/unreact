@@ -92,6 +92,14 @@ function inlinepProps(ast, props) {
           parent.children = propToInline.value;
         }
       }
+    },
+    Iteration: {
+      exit(node) {
+        const propToInline = props.find(prop => prop.name === node.iterable);
+        if (propToInline && propToInline.value && propToInline.value.expression) {
+          node.iterable = propToInline.value.value;
+        }
+      }
     }
   });
 }
