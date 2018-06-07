@@ -23,11 +23,12 @@ export const createText = value => ({
 
 // HTML attributes.
 export const attributeName = 'Attribute';
-export const createAttribute = (name, value, expression = false) => ({
+export const createAttribute = ({ name, value, expression = false, identifiers }) => ({
   type: attributeName,
   name,
   value,
-  expression
+  expression,
+  identifiers
 });
 
 // Template engine syntax for inline JavaScript.
@@ -39,9 +40,10 @@ export const createAttribute = (name, value, expression = false) => ({
 
 // Template engine syntax for escaped interpolation.
 export const interpolationEscapedName = 'InterpolationEscaped';
-export const createInterpolationEscaped = value => ({
+export const createInterpolationEscaped = (value, identifiers) => ({
   type: interpolationEscapedName,
-  value
+  value,
+  identifiers
 });
 
 // Template engine syntax for unescaped interpolation.
@@ -53,11 +55,12 @@ export const createInterpolationEscaped = value => ({
 
 // Template engine syntax for condition.
 export const conditionName = 'Condition';
-export const createCondition = (test, consequent, alternate = null) => ({
+export const createCondition = ({ test, consequent, alternate = null, identifiers }) => ({
   type: conditionName,
   test,
   consequent,
-  alternate
+  alternate,
+  identifiers
 });
 
 // Template engine syntax for iteration.

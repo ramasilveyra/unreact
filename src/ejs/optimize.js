@@ -1,7 +1,7 @@
 /* eslint-disable no-param-reassign */
 import htmlTags from 'html-tags';
 import _ from 'lodash';
-import { createText } from '../ast';
+import MagicString from 'magic-string';
 import traverser from '../traverser';
 
 function optimize(ast, table) {
@@ -63,34 +63,43 @@ function inlinepProps(ast, props) {
   traverser(ast, {
     Attribute: {
       exit(node) {
-        const propToInline = props.find(prop => prop.name === node.value);
-        if (propToInline && propToInline.value && propToInline.value.expression) {
-          node.value = propToInline.value.value;
-          return;
-        }
-        if (propToInline && propToInline.value && propToInline.value.expression === false) {
-          node.value = propToInline.value.value;
-          node.expression = false;
-        }
+        const value = new MagicString(node.value);
+        props.forEach(prop => {
+          if (!node.identifiers) {
+            return;
+          }
+          const propIDs = node.identifiers[prop.name];
+          if (prop.value && propIDs) {
+            const propValue = prop.value.value;
+            propIDs.forEach(propID => {
+              const content =
+                prop.value.expression === false ? `'${String(propValue)}'` : String(propValue);
+              value.overwrite(propID.start, propID.end, String(content));
+            });
+            node.value = value.toString();
+          }
+        });
       }
     },
     InterpolationEscaped: {
       exit(node, parent) {
-        const propToInline = props.find(prop => prop.name === node.value);
-        if (propToInline && propToInline.value && propToInline.value.expression) {
-          node.value = propToInline.value.value;
-          return;
-        }
-        if (propToInline && propToInline.value && propToInline.value.expression === false) {
-          // convert node to string
-          const text = createText(propToInline.value.value);
-          Object.assign(node, text);
-          return;
-        }
-        if (propToInline && propToInline.value) {
-          // convert node to children
-          parent.children = propToInline.value;
-        }
+        const value = new MagicString(node.value);
+        props.forEach(prop => {
+          const propIDs = node.identifiers[prop.name];
+          if (prop.value && propIDs) {
+            const propValue = prop.value.value;
+            if (!propValue) {
+              parent.children = prop.value;
+              return;
+            }
+            propIDs.forEach(propID => {
+              const content =
+                prop.value.expression === false ? `'${String(propValue)}'` : String(propValue);
+              value.overwrite(propID.start, propID.end, String(content));
+            });
+            node.value = value.toString();
+          }
+        });
       }
     },
     Iteration: {
@@ -103,18 +112,21 @@ function inlinepProps(ast, props) {
     },
     Condition: {
       exit(node) {
-        const propToInline = props.find(prop => prop.name === node.test);
-        if (propToInline && propToInline.value && propToInline.value.value === true) {
-          node.test = propToInline.value.value;
-          return;
-        }
-        if (propToInline && propToInline.value && propToInline.value.expression === true) {
-          node.test = propToInline.value.value;
-          return;
-        }
-        if (propToInline && propToInline.value && propToInline.value.expression === false) {
-          node.test = `"${propToInline.value.value}"`;
-        }
+        const test = new MagicString(node.test);
+        props.forEach(prop => {
+          const propIDs = node.identifiers[prop.name];
+          if (prop.value && propIDs) {
+            const propValue = prop.value.value;
+            if (prop.value.expression === false) {
+              node.test = `"${propValue}"`;
+              return;
+            }
+            propIDs.forEach(propID => {
+              test.overwrite(propID.start, propID.end, String(propValue));
+            });
+            node.test = test.toString();
+          }
+        });
       }
     }
   });

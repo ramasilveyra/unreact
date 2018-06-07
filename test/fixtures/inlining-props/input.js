@@ -3,6 +3,7 @@ import React from 'react';
 const Notice = ({ name, description }) => (
   <p>
     This {name} list {description}
+    <strong>{name + ' ' + description}</strong>
   </p>
 );
 const Button = ({ appearence }) => (

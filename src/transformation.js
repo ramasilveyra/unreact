@@ -51,7 +51,8 @@ function transformation(oldAst, inputFilePath) {
         return;
       }
 
-      const expression = path.node.expression;
+      const expressionPath = path.get('expression');
+      const expression = expressionPath.node;
 
       if (t.isLogicalExpression(expression, { operator: '&&' })) {
         return;
@@ -70,14 +71,15 @@ function transformation(oldAst, inputFilePath) {
       }
 
       const context = getContext(path);
+      const identifiers = getIdentifiersInfo(expressionPath);
 
       if (t.isIdentifier(expression)) {
-        const interpolationEscaped = createInterpolationEscaped(expression.name);
+        const interpolationEscaped = createInterpolationEscaped(expression.name, identifiers);
         addToContext(context, interpolationEscaped);
         return;
       }
       const { code } = babelGenerator(expression);
-      const interpolationEscaped = createInterpolationEscaped(code);
+      const interpolationEscaped = createInterpolationEscaped(code, identifiers);
       addToContext(context, interpolationEscaped);
     },
     JSXAttribute(path) {
@@ -88,22 +90,29 @@ function transformation(oldAst, inputFilePath) {
         return;
       }
       if (!valueNode) {
-        const attribute = createAttribute(name, true);
+        const attribute = createAttribute({ name, value: true, expression: true });
         addToContext(context, attribute, 'attributes');
         return;
       }
       if (t.isStringLiteral(valueNode)) {
-        const attribute = createAttribute(name, valueNode.value);
+        const attribute = createAttribute({ name, value: valueNode.value });
         addToContext(context, attribute, 'attributes');
         return;
       }
-      if (t.isJSXExpressionContainer(valueNode) && t.isIdentifier(valueNode.expression)) {
-        const attribute = createAttribute(name, valueNode.expression.name, true);
+      const expression = path.get('value.expression');
+      const identifiers = getIdentifiersInfo(expression);
+      if (t.isJSXExpressionContainer(valueNode) && t.isIdentifier(expression.node)) {
+        const attribute = createAttribute({
+          name,
+          value: expression.node.name,
+          expression: true,
+          identifiers
+        });
         addToContext(context, attribute, 'attributes');
         return;
       }
-      const { code } = babelGenerator(valueNode.expression);
-      const attribute = createAttribute(name, code, true);
+      const { code } = babelGenerator(expression.node);
+      const attribute = createAttribute({ name, value: code, expression: true, identifiers });
       addToContext(context, attribute, 'attributes');
     },
     CallExpression(path) {
@@ -129,26 +138,35 @@ function transformation(oldAst, inputFilePath) {
       if (path.findParent(node => t.isJSXAttribute(node))) {
         return;
       }
+      const left = path.get('left');
       const context = getContext(path);
+      const identifiers = getIdentifiersInfo(left);
       if (path.node.operator === '&&') {
-        const { code } = babelGenerator(path.node.left);
-        const condition = createCondition(code);
+        const { code } = babelGenerator(left.node);
+        const condition = createCondition({ test: code, identifiers });
         addToContext(context, condition);
         setContext(path, condition);
         return;
       }
-      const { code } = babelGenerator(path.node.left);
-      const interpolationEscaped = createInterpolationEscaped(code);
-      const condition = createCondition(code, interpolationEscaped);
+      const { code } = babelGenerator(left.node);
+      const interpolationEscaped = createInterpolationEscaped(code, identifiers);
+      const condition = createCondition({
+        test: code,
+        consequent: interpolationEscaped,
+        identifiers
+      });
       addToContext(context, condition);
       setContext(path, condition);
     },
     ConditionalExpression(path) {
+      const testPath = path.get('test');
       const context = getContext(path);
       const ignoreConsequent = t.isNullLiteral(path.node.consequent);
-      const { code } = babelGenerator(path.node.test);
+      const padding = ignoreConsequent ? 2 : 0;
+      const identifiers = getIdentifiersInfo(testPath, padding);
+      const { code } = babelGenerator(testPath.node);
       const test = ignoreConsequent ? `!(${code})` : code;
-      const condition = createCondition(test);
+      const condition = createCondition({ test, identifiers });
       addToContext(context, condition);
       setContext(path, condition);
     },
@@ -240,4 +258,33 @@ function shouldIgnoreAttr(name) {
     return true;
   }
   return false;
+}
+
+function getIdentifiersInfo(path, padding = 0) {
+  const start = path.node.start;
+  const info = {};
+  if (t.isIdentifier(path.node)) {
+    const { name, info: idInfo } = getIdentifierInfo(path.node, start, padding);
+    info[name] = [idInfo];
+    return info;
+  }
+  path.traverse({
+    Identifier({ node }) {
+      const { name, info: idInfo } = getIdentifierInfo(node, start, padding);
+      if (info[name]) {
+        info[name].push(idInfo);
+      } else {
+        info[name] = [idInfo];
+      }
+    }
+  });
+  return info;
+}
+
+function getIdentifierInfo(node, start, padding) {
+  const idStart = node.start - start + padding;
+  const idEnd = node.end - start + padding;
+  const name = node.name;
+  const info = { start: idStart, end: idEnd };
+  return { name, info };
 }

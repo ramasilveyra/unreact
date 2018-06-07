@@ -7,6 +7,9 @@ const List = ({ list }) => <ul>{list.map(item => <Item>{item}</Item>)}</ul>;
 const Foo = ({ showIcon }) => (
   <div>{showIcon ? <span className="icon icon-123">Menu</span> : 'Hi!'}</div>
 );
+const Foo2 = ({ showIcon, reallyShowIcon }) => (
+  <div>{showIcon && reallyShowIcon ? <span className="icon icon-123">Menu</span> : 'Hi!'}</div>
+);
 const Main = ({ list }) => (
   <Container>
     <Notice />
@@ -16,6 +19,7 @@ const Main = ({ list }) => (
     <Foo showIcon />
     <Foo showIcon={true} />
     <Foo showIcon="asdasd" />
+    <Foo2 showIcon reallyShowIcon />
   </Container>
 );
 

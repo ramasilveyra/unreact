@@ -1,5 +1,7 @@
-<div class="container">
-  <p>This <%= name %> list is awesome</p>
+<div class="<%= 'container' %>">
+  <p>This <%= name %> list <%= 'is awesome' %>
+    <strong><%= name + ' ' + 'is awesome' %></strong>
+  </p>
 
   <ul>
     <% list.forEach((item) => { %>
@@ -7,5 +9,5 @@
     <% }) %>
   </ul>
 
-  <button class="<%= `btn btn-${appearence || 'default'}` %>">Submit</button>
+  <button class="<%= `btn btn-${'light' || 'default'}` %>">Submit</button>
 </div>
