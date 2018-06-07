@@ -20,8 +20,7 @@ export async function compile(inputCode, inputFile) {
     const code = codeGenerator(optimizedAST);
     return code;
   }
-  const optimizedAST = optimize(ast, table);
-  const code = codeGenerator(optimizedAST);
+  const code = codeGenerator(ast);
   return code;
 }
 
