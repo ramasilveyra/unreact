@@ -1,7 +1,5 @@
-import fs from 'fs';
-import path from 'path';
-import util from 'util';
 import { compile, compileDir, compileFile } from '../src/index';
+import { getFixture, getFixturePath, getTestCase } from './utils';
 
 describe('while using unreact.compile()', () => {
   it('should convert react components of one tag to ejs', async () => {
@@ -124,22 +122,3 @@ describe('while using unreact.compileDir()', () => {
     expect(Simple).toMatchSnapshot();
   });
 });
-
-async function getTestCase(folder) {
-  const input = await getFixture(`${folder}/input.js`);
-  const output = await getFixture(`${folder}/output.ejs`);
-  return { input, output };
-}
-
-const readFileAsync = util.promisify(fs.readFile);
-
-async function getFixture(file) {
-  const filePath = getFixturePath(file);
-  const fileContent = await readFileAsync(filePath, { encoding: 'utf8' });
-  return fileContent;
-}
-
-function getFixturePath(file) {
-  const filePath = path.resolve(__dirname, 'fixtures', file);
-  return filePath;
-}

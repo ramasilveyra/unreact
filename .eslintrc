@@ -1,5 +1,5 @@
 {
-  "extends": "auth0-base/prettier",
+  "extends": "auth0/prettier",
   "overrides": [
     {
       "files": ["test/*.js"],
