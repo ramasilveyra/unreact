@@ -126,6 +126,9 @@ function transformation(oldAst, inputFilePath) {
       if (t.isConditionalExpression(path.parent) && path.parent.test === path.node) {
         return;
       }
+      if (path.findParent(node => t.isJSXAttribute(node))) {
+        return;
+      }
       const context = getContext(path);
       if (path.node.operator === '&&') {
         const { code } = babelGenerator(path.node.left);
