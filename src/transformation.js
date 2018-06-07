@@ -231,11 +231,6 @@ function transformation(oldAst, inputFilePath) {
 export default transformation;
 
 function setContext(path, context) {
-  if (path.type === 'File') {
-    path.program._context = context;
-    return;
-  }
-
   path.node._context = context;
 }
 
