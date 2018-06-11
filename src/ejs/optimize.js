@@ -3,6 +3,7 @@ import htmlTags from 'html-tags';
 import _ from 'lodash';
 import MagicString from 'magic-string';
 import traverser from '../traverser';
+import { textName } from '../ast';
 
 function optimize(ast, table) {
   traverser(ast, {
@@ -73,10 +74,19 @@ function inlinepProps(ast, props) {
         propsToChange.forEach(prop => {
           const propIDs = node.identifiers[prop.name];
           const propValue = prop.value.value;
+          const canMakeText =
+            Object.keys(node.identifiers).length === 1 &&
+            propIDs.length === 1 &&
+            propIDs[0].start === 0 &&
+            propIDs[0].end === node.value.length;
           propIDs.forEach(propID => {
-            const content =
-              prop.value.expression === false ? `'${String(propValue)}'` : String(propValue);
+            const isText = prop.value.expression === false;
+            const content = !canMakeText && isText ? `'${String(propValue)}'` : String(propValue);
             value.overwrite(propID.start, propID.end, content);
+            if (canMakeText && isText) {
+              // Make attr text;
+              node.expression = false;
+            }
           });
         });
         node.value = value.toString();
@@ -95,10 +105,20 @@ function inlinepProps(ast, props) {
             parent.children = prop.value;
             return;
           }
+          const canMakeText =
+            Object.keys(node.identifiers).length === 1 &&
+            propIDs.length === 1 &&
+            propIDs[0].start === 0 &&
+            propIDs[0].end === node.value.length;
           propIDs.forEach(propID => {
-            const content =
-              prop.value.expression === false ? `'${String(propValue)}'` : String(propValue);
+            const isText = prop.value.expression === false;
+            const content = !canMakeText && isText ? `'${String(propValue)}'` : String(propValue);
             value.overwrite(propID.start, propID.end, content);
+            if (canMakeText && isText) {
+              // Convert to Text.
+              node.type = textName;
+              delete node.identifiers;
+            }
           });
           node.value = value.toString();
         });
