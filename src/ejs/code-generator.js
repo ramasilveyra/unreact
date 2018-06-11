@@ -84,7 +84,9 @@ function generateProperty(name, value, expression) {
   }
 
   if (expression) {
-    return `${startPropertyBeginning}="${generateInterpolationEscaped(value)}"`;
+    return `${generateScriptlet(
+      `if (![null,undefined].includes(${value})) {`
+    )}${startPropertyBeginning}="${generateInterpolationEscaped(value)}"${generateScriptlet('}')}`;
   }
 
   return `${startPropertyBeginning}="${value}"`;

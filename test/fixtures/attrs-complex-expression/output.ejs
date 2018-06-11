@@ -1,1 +1,1 @@
-<input id="<%= getId() %>" class="<%= className + otherClassName %>" tabindex="<%= 80 / 2 + 3 %>" placeholder="<%= `Please type your ${name}` %>" />
+<input<% if (![null,undefined].includes(getId())) { %> id="<%= getId() %>"<% } %><% if (![null,undefined].includes(className + otherClassName)) { %> class="<%= className + otherClassName %>"<% } %><% if (![null,undefined].includes(80 / 2 + 3)) { %> tabindex="<%= 80 / 2 + 3 %>"<% } %><% if (![null,undefined].includes(`Please type your ${name}`)) { %> placeholder="<%= `Please type your ${name}` %>"<% } %> />

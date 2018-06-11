@@ -1,4 +1,4 @@
-<div class="<%= 'container' %>">
+<div<% if (![null,undefined].includes('container')) { %> class="<%= 'container' %>"<% } %>>
   <p>This <%= name %> list <%= 'is awesome' %>
     <strong><%= name + ' ' + 'is awesome' %></strong>
   </p>
@@ -9,5 +9,5 @@
     <% }) %>
   </ul>
 
-  <button class="<%= `btn btn-${'light' || 'default'}` %>">Submit</button>
+  <button<% if (![null,undefined].includes(`btn btn-${'light' || 'default'}`)) { %> class="<%= `btn btn-${'light' || 'default'}` %>"<% } %>>Submit</button>
 </div>

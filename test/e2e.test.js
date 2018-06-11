@@ -9,19 +9,13 @@ import { compile } from '../src/index';
 
 describe('e2e', () => {
   it('should match the result of `ReactDOMServer.renderToString()` and `ejs.render()`', async () => {
-    // HACK:
-    //   1. Manually removed ` data-reactroot=""` from `ReactDOMServer.renderToString()` output.
-    //   2. EJS doesn't handle attributes generation like React. If the value of an attribute is
-    //      `null` it will still print the attribute. Manually removed ` data-clipboard-target=""`.
+    // HACK: Manually removed ` data-reactroot=""` from `ReactDOMServer.renderToString()` output.
     const fixture = 'e2e';
     const expected = ReactDOMServer.renderToString(<Main />).replace('data-reactroot=""', '');
     const MainPath = getFixturePath(`${fixture}/Main.js`);
     const MainCode = await getFixture(`${fixture}/Main.js`);
     const ejsResult = await compile(MainCode, MainPath);
-    const result = ejs
-      .render(ejsResult)
-      .replace(' data-clipboard-target=""', '')
-      .replace(' data-clipboard-target=""', '');
+    const result = ejs.render(ejsResult);
     const minOpts = {
       removeComments: true,
       collapseWhitespace: true,
