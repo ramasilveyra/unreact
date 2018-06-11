@@ -19,7 +19,7 @@ describe('e2e', () => {
     const MainCode = await getFixture(`${fixture}/Main.js`);
     const ejsResult = await compile(MainCode, MainPath);
     const result = ejs
-      .render(ejsResult, { type: '', copyTarget: null, appearance: null })
+      .render(ejsResult)
       .replace(' data-clipboard-target=""', '')
       .replace(' data-clipboard-target=""', '');
     const minOpts = {

@@ -63,42 +63,44 @@ function inlinepProps(ast, props) {
   traverser(ast, {
     Attribute: {
       exit(node) {
+        if (!node.identifiers) {
+          return;
+        }
         const value = new MagicString(node.value);
-        props.forEach(prop => {
-          if (!node.identifiers) {
-            return;
-          }
+        const propsToChange = props.filter(prop => prop.value && node.identifiers[prop.name]);
+        const propsToNotChange = props.filter(prop => !prop.value && node.identifiers[prop.name]);
+        propsToNotChange.forEach(prop => makeReferenceSafe(node, prop, value));
+        propsToChange.forEach(prop => {
           const propIDs = node.identifiers[prop.name];
-          if (prop.value && propIDs) {
-            const propValue = prop.value.value;
-            propIDs.forEach(propID => {
-              const content =
-                prop.value.expression === false ? `'${String(propValue)}'` : String(propValue);
-              value.overwrite(propID.start, propID.end, String(content));
-            });
-            node.value = value.toString();
-          }
+          const propValue = prop.value.value;
+          propIDs.forEach(propID => {
+            const content =
+              prop.value.expression === false ? `'${String(propValue)}'` : String(propValue);
+            value.overwrite(propID.start, propID.end, content);
+          });
         });
+        node.value = value.toString();
       }
     },
     InterpolationEscaped: {
       exit(node, parent) {
         const value = new MagicString(node.value);
-        props.forEach(prop => {
+        const propsToChange = props.filter(prop => prop.value && node.identifiers[prop.name]);
+        const propsToNotChange = props.filter(prop => !prop.value && node.identifiers[prop.name]);
+        propsToNotChange.forEach(prop => makeReferenceSafe(node, prop, value));
+        propsToChange.forEach(prop => {
           const propIDs = node.identifiers[prop.name];
-          if (prop.value && propIDs) {
-            const propValue = prop.value.value;
-            if (!propValue) {
-              parent.children = prop.value;
-              return;
-            }
-            propIDs.forEach(propID => {
-              const content =
-                prop.value.expression === false ? `'${String(propValue)}'` : String(propValue);
-              value.overwrite(propID.start, propID.end, String(content));
-            });
-            node.value = value.toString();
+          const propValue = prop.value.value;
+          if (!propValue) {
+            parent.children = prop.value;
+            return;
           }
+          propIDs.forEach(propID => {
+            const content =
+              prop.value.expression === false ? `'${String(propValue)}'` : String(propValue);
+            value.overwrite(propID.start, propID.end, content);
+          });
+          node.value = value.toString();
         });
       }
     },
@@ -113,21 +115,32 @@ function inlinepProps(ast, props) {
     Condition: {
       exit(node) {
         const test = new MagicString(node.test);
-        props.forEach(prop => {
+        const propsToChange = props.filter(prop => prop.value && node.identifiers[prop.name]);
+        const propsToNotChange = props.filter(prop => !prop.value && node.identifiers[prop.name]);
+        propsToNotChange.forEach(prop => makeReferenceSafe(node, prop, test, 'test'));
+        propsToChange.forEach(prop => {
           const propIDs = node.identifiers[prop.name];
-          if (prop.value && propIDs) {
-            const propValue = prop.value.value;
-            if (prop.value.expression === false) {
-              node.test = `"${propValue}"`;
-              return;
-            }
-            propIDs.forEach(propID => {
-              test.overwrite(propID.start, propID.end, String(propValue));
-            });
-            node.test = test.toString();
+          const propValue = prop.value.value;
+          if (prop.value.expression === false) {
+            node.test = `"${propValue}"`;
+            return;
           }
+          propIDs.forEach(propID => {
+            test.overwrite(propID.start, propID.end, String(propValue));
+          });
+          node.test = test.toString();
         });
       }
     }
   });
+}
+
+function makeReferenceSafe(node, prop, magicString, key = 'value') {
+  const propIDs = node.identifiers[prop.name];
+  propIDs.forEach(propID => {
+    const contentVar = magicString.slice(propID.start, propID.end);
+    const content = `(typeof ${contentVar} === 'undefined' ? undefined : ${contentVar})`;
+    magicString.overwrite(propID.start, propID.end, content);
+  });
+  node[key] = magicString.toString();
 }
