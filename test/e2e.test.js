@@ -9,9 +9,8 @@ import { compile } from '../src/index';
 
 describe('e2e', () => {
   it('should match the result of `ReactDOMServer.renderToString()` and `ejs.render()`', async () => {
-    // HACK: Manually removed `data-reactroot=""` from `ReactDOMServer.renderToString()` output.
     const fixture = 'e2e';
-    const expected = ReactDOMServer.renderToString(<Main />).replace('data-reactroot=""', '');
+    const expected = ReactDOMServer.renderToStaticMarkup(<Main />);
     const MainPath = getFixturePath(`${fixture}/Main.js`);
     const MainCode = await getFixture(`${fixture}/Main.js`);
     const ejsResult = await compile(MainCode, MainPath);
