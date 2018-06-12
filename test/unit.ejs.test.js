@@ -1,7 +1,7 @@
-import { codeGenerator } from '../src/ejs';
+import codeGeneratorEJS from '../src/code-generator-ejs';
 
 describe('while using EJS code generator', () => {
   it('should throw with not valid AST node type', () => {
-    expect(() => codeGenerator({ type: 'FOO' })).toThrow();
+    expect(() => codeGeneratorEJS({ type: 'FOO' })).toThrow();
   });
 });

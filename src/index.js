@@ -7,7 +7,8 @@ import globby from 'globby';
 import parser from './parser';
 import transformation from './transformation';
 import DependencyGraph from './deps-graph';
-import { codeGenerator, optimize } from './ejs';
+import codeGeneratorEjs from './code-generator-ejs';
+import optimize from './optimize';
 
 const readFileAsync = util.promisify(fs.readFile);
 const writeFileAsync = util.promisify(fs.writeFile);
@@ -17,10 +18,10 @@ export async function compile(inputCode, inputFile) {
   if (inputFile) {
     const { bundleAST, bundleTable } = await resolveDependencies(inputFile, ast, table);
     const optimizedAST = optimize(bundleAST, bundleTable);
-    const code = codeGenerator(optimizedAST);
+    const code = codeGeneratorEjs(optimizedAST);
     return code;
   }
-  const code = codeGenerator(ast);
+  const code = codeGeneratorEjs(ast);
   return code;
 }
 

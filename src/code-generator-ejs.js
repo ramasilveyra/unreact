@@ -9,20 +9,20 @@ import {
   mixinName,
   rootName,
   textName
-} from '../ast';
+} from './ast';
 
-function codeGenerator(node, level = 0, removeEmptyLine = false) {
+function codeGeneratorEjs(node, level = 0, removeEmptyLine = false) {
   switch (node.type) {
     case rootName:
-      return node.children.map((child, i) => codeGenerator(child, level, i === 0)).join('');
+      return node.children.map((child, i) => codeGeneratorEjs(child, level, i === 0)).join('');
     case mixinName:
-      return node.children.map(child => codeGenerator(child, level, removeEmptyLine));
+      return node.children.map(child => codeGeneratorEjs(child, level, removeEmptyLine));
     case elementName:
       return indent(
         generateTag(
           node.tagName,
-          node.children.map(child => codeGenerator(child, level + 1, removeEmptyLine)).join(''),
-          node.attributes.map(child => codeGenerator(child, level + 1, removeEmptyLine)).join('')
+          node.children.map(child => codeGeneratorEjs(child, level + 1, removeEmptyLine)).join(''),
+          node.attributes.map(child => codeGeneratorEjs(child, level + 1, removeEmptyLine)).join('')
         ),
         level,
         removeEmptyLine
@@ -37,8 +37,8 @@ function codeGenerator(node, level = 0, removeEmptyLine = false) {
       return indent(
         generateCondition(
           node.test,
-          codeGenerator(node.consequent, level + 1, removeEmptyLine),
-          node.alternate && codeGenerator(node.alternate, level + 1, removeEmptyLine)
+          codeGeneratorEjs(node.consequent, level + 1, removeEmptyLine),
+          node.alternate && codeGeneratorEjs(node.alternate, level + 1, removeEmptyLine)
         ),
         level,
         removeEmptyLine
@@ -50,7 +50,7 @@ function codeGenerator(node, level = 0, removeEmptyLine = false) {
           currentValue: node.currentValue,
           index: node.index,
           array: node.array,
-          body: codeGenerator(node.body, level + 1, removeEmptyLine)
+          body: codeGeneratorEjs(node.body, level + 1, removeEmptyLine)
         }),
         level,
         removeEmptyLine
@@ -60,7 +60,7 @@ function codeGenerator(node, level = 0, removeEmptyLine = false) {
   }
 }
 
-export default codeGenerator;
+export default codeGeneratorEjs;
 
 function generateTag(tagName, children, properties) {
   const startTagBeginning = `<${tagName}${properties}`;

@@ -2,8 +2,8 @@
 import htmlTags from 'html-tags';
 import _ from 'lodash';
 import MagicString from 'magic-string';
-import traverser from '../traverser';
-import { textName } from '../ast';
+import traverser from './traverser';
+import { textName } from './ast';
 
 function optimize(ast, table) {
   traverser(ast, {
