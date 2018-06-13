@@ -5,7 +5,7 @@ import MagicString from 'magic-string';
 import traverser from './traverser';
 import { textName } from './ast';
 
-function optimize(ast, table) {
+function optimize(ast, table, { templateEngine }) {
   traverser(ast, {
     Element: {
       exit(node) {
@@ -33,10 +33,11 @@ function optimize(ast, table) {
           delete node.attributes;
           // Inline props.
           if (propsToInline) {
-            inlinepProps(node, propsToInline);
+            const needsReferenceSafe = templateEngine !== 'pug';
+            inlinepProps(node, propsToInline, needsReferenceSafe);
           }
           // Check again if new Mixin has React Components.
-          optimize(node, table);
+          optimize(node, table, { templateEngine });
         }
       }
     }
@@ -60,7 +61,7 @@ function getTableComponent(name, table) {
   return null;
 }
 
-function inlinepProps(ast, props) {
+function inlinepProps(ast, props, needsReferenceSafe) {
   traverser(ast, {
     Attribute: {
       exit(node) {
@@ -70,7 +71,9 @@ function inlinepProps(ast, props) {
         const value = new MagicString(node.value);
         const propsToChange = props.filter(prop => prop.value && node.identifiers[prop.name]);
         const propsToNotChange = props.filter(prop => !prop.value && node.identifiers[prop.name]);
-        propsToNotChange.forEach(prop => makeReferenceSafe(node, prop, value));
+        propsToNotChange.forEach(
+          prop => needsReferenceSafe && makeReferenceSafe(node, prop, value)
+        );
         propsToChange.forEach(prop => {
           const propIDs = node.identifiers[prop.name];
           const propValue = prop.value.value;
@@ -97,7 +100,9 @@ function inlinepProps(ast, props) {
         const value = new MagicString(node.value);
         const propsToChange = props.filter(prop => prop.value && node.identifiers[prop.name]);
         const propsToNotChange = props.filter(prop => !prop.value && node.identifiers[prop.name]);
-        propsToNotChange.forEach(prop => makeReferenceSafe(node, prop, value));
+        propsToNotChange.forEach(
+          prop => needsReferenceSafe && makeReferenceSafe(node, prop, value)
+        );
         propsToChange.forEach(prop => {
           const propIDs = node.identifiers[prop.name];
           const propValue = prop.value.value;
@@ -137,7 +142,9 @@ function inlinepProps(ast, props) {
         const test = new MagicString(node.test);
         const propsToChange = props.filter(prop => prop.value && node.identifiers[prop.name]);
         const propsToNotChange = props.filter(prop => !prop.value && node.identifiers[prop.name]);
-        propsToNotChange.forEach(prop => makeReferenceSafe(node, prop, test, 'test'));
+        propsToNotChange.forEach(
+          prop => needsReferenceSafe && makeReferenceSafe(node, prop, test, 'test')
+        );
         propsToChange.forEach(prop => {
           const propIDs = node.identifiers[prop.name];
           const propValue = prop.value.value;

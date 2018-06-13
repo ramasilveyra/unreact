@@ -111,7 +111,7 @@ function transformation(oldAst, inputFilePath) {
         addToContext(context, attribute, 'attributes');
         return;
       }
-      const { code } = babelGenerator(expression.node);
+      const { code } = babelGenerator(expression.node, { concise: true });
       const attribute = createAttribute({ name, value: code, expression: true, identifiers });
       addToContext(context, attribute, 'attributes');
     },

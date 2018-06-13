@@ -4,16 +4,24 @@ import util from 'util';
 
 export async function getTestCase(folder) {
   const input = await getFixture(`${folder}/input.js`);
-  const output = await getFixture(`${folder}/output.ejs`);
-  return { input, output };
+  const outputEJS = await getFixture(`${folder}/output.ejs`);
+  const outputPug = await getFixture(`${folder}/output.pug`);
+  return { input, outputEJS, outputPug };
 }
 
 const readFileAsync = util.promisify(fs.readFile);
 
 export async function getFixture(file) {
-  const filePath = getFixturePath(file);
-  const fileContent = await readFileAsync(filePath, { encoding: 'utf8' });
-  return fileContent;
+  try {
+    const filePath = getFixturePath(file);
+    const fileContent = await readFileAsync(filePath, { encoding: 'utf8' });
+    return fileContent;
+  } catch (err) {
+    if (err.code === 'ENOENT') {
+      return null;
+    }
+    throw err;
+  }
 }
 
 export function getFixturePath(file) {

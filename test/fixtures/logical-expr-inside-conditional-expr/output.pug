@@ -1,0 +1,12 @@
+div
+  if error && errorMsg
+    p(class="hlp-input-message hlp-input-errormsg") #{errorMsg}
+  if !(onlyLogo)
+    if text
+      #{text}
+    else
+      p Log In to 
+        strong #{company}
+        |  to get started using 
+        strong #{app}
+        | .

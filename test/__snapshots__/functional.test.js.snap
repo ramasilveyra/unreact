@@ -6,15 +6,26 @@ exports[`while using unreact.compileDir() should convert react components of one
     <span></span>
   </div>
 </div>
+
+<div></div>
 "
 `;
 
-exports[`while using unreact.compileDir() should convert react components of one tag to ejs 2`] = `
-"<div></div>
+exports[`while using unreact.compileDir() should convert react components of one tag to pug 1`] = `
+"div
+  div
+    span
+
+div
 "
 `;
 
 exports[`while using unreact.compileFile() should convert react components of one tag to ejs 1`] = `
 "<div></div>
+"
+`;
+
+exports[`while using unreact.compileFile() should convert react components of one tag to pug 1`] = `
+"div
 "
 `;

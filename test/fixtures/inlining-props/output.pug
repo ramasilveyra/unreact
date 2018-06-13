@@ -1,0 +1,7 @@
+div(class="container")
+  p This #{name} list is awesome
+    strong #{name + ' ' + 'is awesome'}
+  ul
+    each item in list
+      li #{item}
+  button(class=`btn btn-${'light' || 'default'}`) Submit

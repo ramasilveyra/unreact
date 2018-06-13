@@ -7,12 +7,12 @@ let compileDir = null;
 describe('while using unreact cli', () => {
   beforeAll(() => {
     jest.mock('../src/index', () => ({
-      compileFile: jest.fn((i, o, p) => {
-        p();
+      compileFile: jest.fn((i, o, opts) => {
+        opts.progress();
         return Promise.resolve();
       }),
-      compileDir: jest.fn((i, o, p) => {
-        p();
+      compileDir: jest.fn((i, o, opts) => {
+        opts.progress();
         return Promise.resolve();
       })
     }));
@@ -70,14 +70,16 @@ describe('while using unreact cli', () => {
     expect(compileFile.mock.calls.length).toEqual(1);
     expect(compileFile.mock.calls[0][0]).toBe(input);
     expect(compileFile.mock.calls[0][1]).toBe(output);
-    expect(typeof compileFile.mock.calls[0][2]).toBe('function');
+    expect(typeof compileFile.mock.calls[0][2]).toBe('object');
+    expect(typeof compileFile.mock.calls[0][2].progress).toBe('function');
+    expect(compileFile.mock.calls[0][2].templateEngine).toBe('pug');
     await expect(result).resolves.toBeUndefined();
   });
 
   it('should log error and exit if compile file with "some-component.js -o some-component.ejs" fails', async () => {
     const errorMsg = 'No such file';
-    compileFile.mockImplementation((i, o, p) => {
-      p();
+    compileFile.mockImplementation((i, o, opts) => {
+      opts.progress();
       return Promise.reject(new Error(errorMsg));
     });
     const input = 'some-component.js';
@@ -90,7 +92,9 @@ describe('while using unreact cli', () => {
     expect(compileFile.mock.calls.length).toEqual(1);
     expect(compileFile.mock.calls[0][0]).toBe(input);
     expect(compileFile.mock.calls[0][1]).toBe(output);
-    expect(typeof compileFile.mock.calls[0][2]).toBe('function');
+    expect(typeof compileFile.mock.calls[0][2]).toBe('object');
+    expect(typeof compileFile.mock.calls[0][2].progress).toBe('function');
+    expect(compileFile.mock.calls[0][2].templateEngine).toBe('pug');
     await expect(result).resolves.toBeUndefined();
     expect(process.exit.mock.calls.length).toEqual(1);
     expect(process.exit.mock.calls[0][0]).toEqual(1);
@@ -108,14 +112,16 @@ describe('while using unreact cli', () => {
     expect(compileDir.mock.calls.length).toEqual(1);
     expect(compileDir.mock.calls[0][0]).toBe(input);
     expect(compileDir.mock.calls[0][1]).toBe(output);
-    expect(typeof compileDir.mock.calls[0][2]).toBe('function');
+    expect(typeof compileDir.mock.calls[0][2]).toBe('object');
+    expect(typeof compileDir.mock.calls[0][2].progress).toBe('function');
+    expect(compileDir.mock.calls[0][2].templateEngine).toBe('pug');
     await expect(result).resolves.toBeUndefined();
   });
 
   it('should log error and exit if compile dir with "components -O build" fails', async () => {
     const errorMsg = 'No such file';
-    compileDir.mockImplementation((i, o, p) => {
-      p();
+    compileDir.mockImplementation((i, o, opts) => {
+      opts.progress();
       return Promise.reject(new Error(errorMsg));
     });
     const input = 'components';
@@ -128,7 +134,9 @@ describe('while using unreact cli', () => {
     expect(compileDir.mock.calls.length).toEqual(1);
     expect(compileDir.mock.calls[0][0]).toBe(input);
     expect(compileDir.mock.calls[0][1]).toBe(output);
-    expect(typeof compileDir.mock.calls[0][2]).toBe('function');
+    expect(typeof compileDir.mock.calls[0][2]).toBe('object');
+    expect(typeof compileDir.mock.calls[0][2].progress).toBe('function');
+    expect(compileDir.mock.calls[0][2].templateEngine).toBe('pug');
     await expect(result).resolves.toBeUndefined();
     expect(process.exit.mock.calls.length).toEqual(1);
     expect(process.exit.mock.calls[0][0]).toEqual(1);

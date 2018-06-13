@@ -19,6 +19,13 @@ export default function unreactCLI(argv) {
       describe: 'Output dir',
       type: 'string'
     })
+    .option('t', {
+      alias: 'template-engine',
+      describe: 'Output template engine',
+      type: 'string',
+      default: 'pug',
+      choices: ['pug', 'ejs']
+    })
     .usage(`${pkg.description}.\nUsage: $0 <file or dir> [options]`)
     .version()
     .alias('version', 'v')
@@ -29,12 +36,13 @@ export default function unreactCLI(argv) {
   const progress = report => {
     spinner.stopAndPersist({ text: `${chalk.gray(report)}` });
   };
+  const templateEngine = parsedArgv.t;
 
   if (fileOrDir && parsedArgv.o) {
     spinner.start();
-    return compileFile(fileOrDir, parsedArgv.o, progress)
+    return compileFile(fileOrDir, parsedArgv.o, { templateEngine, progress })
       .then(() => {
-        spinner.succeed(`${chalk.bold.green('success')} file transformed to EJS`);
+        spinner.succeed(`${chalk.bold.green('success')} file transformed to ${templateEngine}`);
       })
       .catch(err => {
         spinner.stopAndPersist();
@@ -45,9 +53,9 @@ export default function unreactCLI(argv) {
 
   if (fileOrDir && parsedArgv.O) {
     spinner.start();
-    return compileDir(fileOrDir, parsedArgv.O, progress)
+    return compileDir(fileOrDir, parsedArgv.O, { templateEngine, progress })
       .then(() => {
-        spinner.succeed(`${chalk.bold.green('success')} folder transformed to EJS`);
+        spinner.succeed(`${chalk.bold.green('success')} folder transformed to ${templateEngine}`);
       })
       .catch(err => {
         spinner.stopAndPersist();

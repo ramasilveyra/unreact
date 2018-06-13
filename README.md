@@ -46,15 +46,22 @@ $ npm install --save-dev unreact
 ### Convert Files (`--out-file`/`-o`)
 
 ```bash
-
-unreact src/button.js --out-file views/button.ejs
+unreact src/button.js --out-file views/button.pug
 ```
 
 ### Convert Directories (`--out-dir`/`-O`)
 
 ```bash
-
 unreact src --out-dir views
+```
+
+### Template Engine (`--template-engine`/`-t`)
+
+Default option is `pug`, you can also choose `ejs`.
+
+```bash
+unreact src/button.js --out-file views/button.ejs --template-engine ejs
+unreact src --out-dir views -t ejs
 ```
 
 <h2 align="center">Limitations</h2>

@@ -1,0 +1,11 @@
+div
+  ul
+    each item in list
+      li #{item}
+  ul
+    each item, index in list
+      li #{item} at #{index}
+  ul
+    each item, index in list
+      - const array = list;
+      li #{item} at #{index} of #{array.join(', ')}
