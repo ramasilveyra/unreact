@@ -116,6 +116,13 @@ describe('while using unreact.compile()', () => {
     expect(resultEJS).toBe(outputEJS);
     expect(resultPug).toBe(outputPug);
   });
+  it('should convert react components to ejs and pug with siblings of text elements and expressions', async () => {
+    const { input, outputEJS, outputPug } = await getTestCase('siblings-text-elements');
+    const resultEJS = await compile(input, { templateEngine: 'ejs' });
+    const resultPug = await compile(input, { templateEngine: 'pug' });
+    expect(resultEJS).toBe(outputEJS);
+    expect(resultPug).toBe(outputPug);
+  });
   it('should convert react components to ejs and pug and inline others components', async () => {
     const { input, outputEJS, outputPug } = await getTestCase('inlining');
     const resultEJS = await compile(input, { templateEngine: 'ejs' });

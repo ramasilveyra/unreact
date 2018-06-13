@@ -44,7 +44,7 @@ function codeGeneratorPug(node, { level = 0, previousSibling = null } = {}) {
       return generateProperty(node.name, node.value, node.expression);
     case interpolationEscapedName:
       if (previousSibling && previousSibling.type === elementName) {
-        return indent(generateInterpolationEscaped(node.value), { level });
+        return indent(`| ${generateInterpolationEscaped(node.value)}`, { level });
       }
       return generateInterpolationEscaped(node.value);
     case conditionName:
