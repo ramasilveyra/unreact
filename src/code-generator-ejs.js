@@ -11,21 +11,22 @@ import {
   textName
 } from './ast';
 
-function codeGeneratorEjs(node, level = 0, removeEmptyLine = false) {
+function codeGeneratorEjs(node, { level = 0 } = {}) {
   switch (node.type) {
     case rootName:
-      return node.children.map((child, i) => codeGeneratorEjs(child, level, i === 0)).join('');
+      return node.children.map(child => codeGeneratorEjs(child, { level })).join('');
     case mixinName:
-      return node.children.map(child => codeGeneratorEjs(child, level, removeEmptyLine));
+      return node.children.map(child => codeGeneratorEjs(child, { level }));
     case elementName:
       return indent(
         generateTag(
           node.tagName,
-          node.children.map(child => codeGeneratorEjs(child, level + 1, removeEmptyLine)).join(''),
-          node.attributes.map(child => codeGeneratorEjs(child, level + 1, removeEmptyLine)).join('')
+          node.children.map(child => codeGeneratorEjs(child, { level: level + 1 })).join(''),
+          node.attributes.map(child => codeGeneratorEjs(child, { level: level + 1 })).join('')
         ),
-        level,
-        removeEmptyLine
+        {
+          level
+        }
       );
     case textName:
       return node.value;
@@ -37,11 +38,12 @@ function codeGeneratorEjs(node, level = 0, removeEmptyLine = false) {
       return indent(
         generateCondition(
           node.test,
-          codeGeneratorEjs(node.consequent, level + 1, removeEmptyLine),
-          node.alternate && codeGeneratorEjs(node.alternate, level + 1, removeEmptyLine)
+          codeGeneratorEjs(node.consequent, { level: level + 1 }),
+          node.alternate && codeGeneratorEjs(node.alternate, { level: level + 1 })
         ),
-        level,
-        removeEmptyLine
+        {
+          level
+        }
       );
     case iterationName:
       return indent(
@@ -50,10 +52,11 @@ function codeGeneratorEjs(node, level = 0, removeEmptyLine = false) {
           currentValue: node.currentValue,
           index: node.index,
           array: node.array,
-          body: codeGeneratorEjs(node.body, level + 1, removeEmptyLine)
+          body: codeGeneratorEjs(node.body, { level: level + 1 })
         }),
-        level,
-        removeEmptyLine
+        {
+          level
+        }
       );
     default:
       throw new TypeError(node.type);
@@ -134,12 +137,12 @@ function generateInterpolationEscaped(value) {
   return `<%= ${value} %>`;
 }
 
-function indent(str, level, removeEmptyLine) {
+function indent(str, { level }) {
   const indentChar = ' ';
   const indentLength = 2;
   const startIndentNumber = level * indentLength;
   const endIndentNumber = (level ? level - 1 : level) * indentLength;
-  const strIndented = `${removeEmptyLine && level === 0 ? '' : '\n'}${indentChar.repeat(
+  const strIndented = `${level === 0 ? '' : '\n'}${indentChar.repeat(
     startIndentNumber
   )}${str}${'\n'}${indentChar.repeat(endIndentNumber)}`;
   return strIndented;
