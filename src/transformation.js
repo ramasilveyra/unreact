@@ -17,6 +17,7 @@ import isFunctionalReactComponent from './utils/is-functional-react-component';
 import getReactComponentName from './utils/get-react-component-name';
 import addToContext from './utils/add-to-context';
 import getReactComponentProps from './utils/get-react-component-props';
+import inlineStyles from './utils/inline-styles';
 
 function transformation(oldAst, inputFilePath) {
   const newAst = createRoot();
@@ -109,6 +110,18 @@ function transformation(oldAst, inputFilePath) {
           identifiers
         });
         addToContext(context, attribute, 'attributes');
+        return;
+      }
+      if (name === 'style') {
+        const styles = {};
+        expression.node.properties.forEach(prop => {
+          styles[prop.key.name] = prop.value.value;
+        });
+        const stringInlineStyles = inlineStyles(styles);
+        if (stringInlineStyles) {
+          const attribute = createAttribute({ name, value: stringInlineStyles });
+          addToContext(context, attribute, 'attributes');
+        }
         return;
       }
       const { code } = babelGenerator(expression.node, { concise: true });
