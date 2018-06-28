@@ -27,6 +27,7 @@
     "unreact": "bin/unreact.js"
   },
   "files": [
+    "bin",
     "build"
   ],
   "repository": "git@github.com:ramasilveyra/unreact.git",
