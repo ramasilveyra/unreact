@@ -148,7 +148,7 @@ function transformation(oldAst, inputFilePath) {
       if (t.isConditionalExpression(path.parent) && path.parent.test === path.node) {
         return;
       }
-      if (path.findParent(node => t.isJSXAttribute(node))) {
+      if (path.findParent(node => t.isJSXAttribute(node)) || t.isLogicalExpression(path.parent)) {
         return;
       }
       const left = path.get('left');
