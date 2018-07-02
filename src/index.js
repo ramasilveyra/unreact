@@ -18,10 +18,8 @@ export async function compile(inputCode, { inputFile, templateEngine = 'pug' } =
   const { ast, table } = parseTransformOptimize(inputCode, inputFile, { templateEngine });
   const codeGenerator = templateEngine === 'ejs' ? codeGeneratorEjs : codeGeneratorPug;
   if (inputFile) {
-    const { bundleAST, bundleTable } = await resolveDependencies(inputFile, ast, table, {
-      templateEngine
-    });
-    const optimizedAST = optimize(bundleAST, bundleTable, { templateEngine });
+    const { bundleAST, bundleTable } = await resolveDependencies(inputFile, ast, table);
+    const optimizedAST = optimize(bundleAST, bundleTable);
     const code = codeGenerator(optimizedAST);
     return code;
   }
@@ -29,17 +27,17 @@ export async function compile(inputCode, { inputFile, templateEngine = 'pug' } =
   return code;
 }
 
-function parseTransformOptimize(inputCode, inputFile, { templateEngine }) {
+function parseTransformOptimize(inputCode, inputFile) {
   const oldAst = parser(inputCode);
   const { ast, table } = transformation(oldAst, inputFile);
-  const optimizedAST = optimize(ast, table, { templateEngine });
+  const optimizedAST = optimize(ast, table);
   return { ast: optimizedAST, table };
 }
 
-async function resolveDependencies(moduleFile, moduleAST, moduleTable, { templateEngine }) {
+async function resolveDependencies(moduleFile, moduleAST, moduleTable) {
   const depGraph = new DependencyGraph();
   depGraph.addModule(moduleFile, moduleAST, moduleTable);
-  await parseModule(moduleFile, moduleTable, depGraph, { templateEngine });
+  await parseModule(moduleFile, moduleTable, depGraph);
   const preBundleTable = depGraph.modules.map(dep => dep.table);
   const bundleTable = preBundleTable.reduce(
     (acc, item) => ({
@@ -51,19 +49,17 @@ async function resolveDependencies(moduleFile, moduleAST, moduleTable, { templat
   return { bundleAST: moduleAST, bundleTable };
 }
 
-async function parseModule(moduleFile, moduleTable, depGraph, { templateEngine }) {
+async function parseModule(moduleFile, moduleTable, depGraph) {
   await Promise.all(
     Object.values(moduleTable.dependencies).map(async dep => {
       if (dep.isUsedAsRC) {
         const depFilePath = await resolveFromFile(moduleFile, dep.source);
         dep.path = depFilePath; // eslint-disable-line no-param-reassign
         const depCode = await readFileAsync(depFilePath, { encoding: 'utf8' });
-        const { ast: depAST, table: depTable } = parseTransformOptimize(depCode, depFilePath, {
-          templateEngine
-        });
+        const { ast: depAST, table: depTable } = parseTransformOptimize(depCode, depFilePath);
         depGraph.addModule(depFilePath, depAST, depTable);
         depGraph.addDependency(moduleFile, depFilePath);
-        await parseModule(depFilePath, depTable, depGraph, { templateEngine });
+        await parseModule(depFilePath, depTable, depGraph);
       }
     })
   );

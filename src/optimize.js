@@ -5,7 +5,7 @@ import MagicString from 'magic-string';
 import traverser from './traverser';
 import { textName } from './ast';
 
-function optimize(ast, table, { templateEngine }) {
+function optimize(ast, table) {
   traverser(ast, {
     Element: {
       exit(node) {
@@ -33,11 +33,10 @@ function optimize(ast, table, { templateEngine }) {
           delete node.attributes;
           // Inline props.
           if (propsToInline) {
-            const needsReferenceSafe = templateEngine !== 'pug';
-            inlinepProps(node, propsToInline, needsReferenceSafe);
+            inlinepProps(node, propsToInline);
           }
           // Check again if new Mixin has React Components.
-          optimize(node, table, { templateEngine });
+          optimize(node, table);
         }
       }
     }
@@ -61,19 +60,20 @@ function getTableComponent(name, table) {
   return null;
 }
 
-function inlinepProps(ast, props, needsReferenceSafe) {
+function inlinepProps(ast, props) {
   traverser(ast, {
     Attribute: {
-      exit(node) {
+      exit(node, parent) {
         if (!node.identifiers) {
           return;
         }
         const value = new MagicString(node.value);
         const propsToChange = props.filter(prop => prop.value && node.identifiers[prop.name]);
         const propsToNotChange = props.filter(prop => !prop.value && node.identifiers[prop.name]);
-        propsToNotChange.forEach(
-          prop => needsReferenceSafe && makeReferenceSafe(node, prop, value)
-        );
+        propsToNotChange.forEach(prop => makeUndefined(node, prop, value));
+        if (node.value === 'undefined') {
+          parent.attributes = parent.attributes.filter(attr => attr !== node);
+        }
         propsToChange.forEach(prop => {
           const propIDs = node.identifiers[prop.name];
           const propValue = prop.value.value;
@@ -100,9 +100,12 @@ function inlinepProps(ast, props, needsReferenceSafe) {
         const value = new MagicString(node.value);
         const propsToChange = props.filter(prop => prop.value && node.identifiers[prop.name]);
         const propsToNotChange = props.filter(prop => !prop.value && node.identifiers[prop.name]);
-        propsToNotChange.forEach(
-          prop => needsReferenceSafe && makeReferenceSafe(node, prop, value)
-        );
+        propsToNotChange.forEach(prop => makeUndefined(node, prop, value));
+        if (node.value === 'undefined') {
+          // HACK: to "remove" InterpolationEscaped.
+          node.value = '';
+          node.type = 'Text';
+        }
         propsToChange.forEach(prop => {
           const propIDs = node.identifiers[prop.name];
           const propValue = prop.value.value;
@@ -142,9 +145,7 @@ function inlinepProps(ast, props, needsReferenceSafe) {
         const test = new MagicString(node.test);
         const propsToChange = props.filter(prop => prop.value && node.identifiers[prop.name]);
         const propsToNotChange = props.filter(prop => !prop.value && node.identifiers[prop.name]);
-        propsToNotChange.forEach(
-          prop => needsReferenceSafe && makeReferenceSafe(node, prop, test, 'test')
-        );
+        propsToNotChange.forEach(prop => makeUndefined(node, prop, test, 'test'));
         propsToChange.forEach(prop => {
           const propIDs = node.identifiers[prop.name];
           const propValue = prop.value.value;
@@ -162,11 +163,20 @@ function inlinepProps(ast, props, needsReferenceSafe) {
   });
 }
 
-function makeReferenceSafe(node, prop, magicString, key = 'value') {
+// function makeReferenceSafe(node, prop, magicString, key = 'value') {
+//   const propIDs = node.identifiers[prop.name];
+//   propIDs.forEach(propID => {
+//     const contentVar = magicString.slice(propID.start, propID.end);
+//     const content = `(typeof ${contentVar} === 'undefined' ? undefined : ${contentVar})`;
+//     magicString.overwrite(propID.start, propID.end, content);
+//   });
+//   node[key] = magicString.toString();
+// }
+
+function makeUndefined(node, prop, magicString, key = 'value') {
   const propIDs = node.identifiers[prop.name];
   propIDs.forEach(propID => {
-    const contentVar = magicString.slice(propID.start, propID.end);
-    const content = `(typeof ${contentVar} === 'undefined' ? undefined : ${contentVar})`;
+    const content = 'undefined';
     magicString.overwrite(propID.start, propID.end, content);
   });
   node[key] = magicString.toString();
