@@ -14,16 +14,19 @@ import optimize from './optimize';
 const readFileAsync = util.promisify(fs.readFile);
 const writeFileAsync = util.promisify(fs.writeFile);
 
-export async function compile(inputCode, { inputFile, templateEngine = 'pug' } = {}) {
+export async function compile(
+  inputCode,
+  { inputFile, templateEngine = 'pug', beginning = '', ending = '' } = {}
+) {
   const { ast, table } = parseTransformOptimize(inputCode, inputFile, { templateEngine });
   const codeGenerator = templateEngine === 'ejs' ? codeGeneratorEjs : codeGeneratorPug;
   if (inputFile) {
     const { bundleAST, bundleTable } = await resolveDependencies(inputFile, ast, table);
     const optimizedAST = optimize(bundleAST, bundleTable);
-    const code = codeGenerator(optimizedAST);
+    const code = generateOutputCode(codeGenerator(optimizedAST), beginning, ending);
     return code;
   }
-  const code = codeGenerator(ast);
+  const code = generateOutputCode(codeGenerator(ast), beginning, ending);
   return code;
 }
 
@@ -71,15 +74,25 @@ async function resolveFromFile(filePath, moduleId) {
   return depFilePath;
 }
 
+function generateOutputCode(code, beginning, ending) {
+  const outputCode = `${beginning}${beginning ? '\n' : ''}${code}${ending}${ending ? '\n' : ''}`;
+  return outputCode;
+}
+
 export async function compileFile(
   inputFile,
   outputFile,
-  { templateEngine = 'pug', progress = () => {} } = {}
+  { templateEngine = 'pug', beginning = '', ending = '', progress = () => {} } = {}
 ) {
   const inputFilePath = path.resolve(process.cwd(), inputFile);
   const outputFilePath = path.resolve(process.cwd(), outputFile);
   const inputCode = await readFileAsync(inputFilePath, { encoding: 'utf8' });
-  const code = await compile(inputCode, { inputFile: inputFilePath, templateEngine });
+  const code = await compile(inputCode, {
+    inputFile: inputFilePath,
+    templateEngine,
+    beginning,
+    ending
+  });
   const outputFilePathDir = path.dirname(outputFilePath);
   await makeDir(outputFilePathDir);
   await writeFileAsync(outputFilePath, code);
@@ -90,7 +103,7 @@ export async function compileFile(
 export async function compileDir(
   inputDir,
   outputDir,
-  { templateEngine = 'pug', progress = () => {} } = {}
+  { templateEngine = 'pug', beginning = '', ending = '', progress = () => {} } = {}
 ) {
   const inputDirPath = path.resolve(process.cwd(), inputDir);
   const outputDirPath = path.resolve(process.cwd(), outputDir);
@@ -103,7 +116,7 @@ export async function compileDir(
       const outputFile = filePath
         .replace(inputDirPath, outputDirPath)
         .replace(oldExtension, extension);
-      return compileFile(filePath, outputFile, { templateEngine, progress });
+      return compileFile(filePath, outputFile, { templateEngine, beginning, ending, progress });
     })
   );
 }

@@ -26,6 +26,14 @@ export default function unreactCLI(argv) {
       default: 'pug',
       choices: ['pug', 'ejs']
     })
+    .option('add-beginning', {
+      describe: 'Add string to the beginning of the output file',
+      type: 'string'
+    })
+    .option('add-ending', {
+      describe: 'Add string to the ending of the output file',
+      type: 'string'
+    })
     .usage(`${pkg.description}.\nUsage: $0 <file or dir> [options]`)
     .version()
     .alias('version', 'v')
@@ -37,10 +45,12 @@ export default function unreactCLI(argv) {
     spinner.stopAndPersist({ text: `${chalk.gray(report)}` });
   };
   const templateEngine = parsedArgv.t;
+  const beginning = parsedArgv['add-beginning'];
+  const ending = parsedArgv['add-ending'];
 
   if (fileOrDir && parsedArgv.o) {
     spinner.start();
-    return compileFile(fileOrDir, parsedArgv.o, { templateEngine, progress })
+    return compileFile(fileOrDir, parsedArgv.o, { templateEngine, beginning, ending, progress })
       .then(() => {
         spinner.succeed(`${chalk.bold.green('success')} file transformed to ${templateEngine}`);
       })
@@ -53,7 +63,7 @@ export default function unreactCLI(argv) {
 
   if (fileOrDir && parsedArgv.O) {
     spinner.start();
-    return compileDir(fileOrDir, parsedArgv.O, { templateEngine, progress })
+    return compileDir(fileOrDir, parsedArgv.O, { templateEngine, beginning, ending, progress })
       .then(() => {
         spinner.succeed(`${chalk.bold.green('success')} folder transformed to ${templateEngine}`);
       })

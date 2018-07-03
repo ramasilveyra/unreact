@@ -191,3 +191,47 @@ describe('while using unreact.compileDir()', () => {
     expect(`${Nested}\n${Simple}`).toMatchSnapshot();
   });
 });
+
+describe('while adding string to the beginning and ending', () => {
+  it('should add string to the beginning', async () => {
+    const { input, outputEJS, outputPug } = await getTestCase('add-beginning');
+    const resultEJS = await compile(input, {
+      templateEngine: 'ejs',
+      beginning: "<%- include('header') %>"
+    });
+    const resultPug = await compile(input, {
+      templateEngine: 'pug',
+      beginning: "include 'header'"
+    });
+    expect(resultEJS).toBe(outputEJS);
+    expect(resultPug).toBe(outputPug);
+  });
+  it('should add string to the ending', async () => {
+    const { input, outputEJS, outputPug } = await getTestCase('add-ending');
+    const resultEJS = await compile(input, {
+      templateEngine: 'ejs',
+      ending: "<%- include('footer') %>"
+    });
+    const resultPug = await compile(input, {
+      templateEngine: 'pug',
+      ending: "include 'footer'"
+    });
+    expect(resultEJS).toBe(outputEJS);
+    expect(resultPug).toBe(outputPug);
+  });
+  it('should add string to the beginning and ending', async () => {
+    const { input, outputEJS, outputPug } = await getTestCase('add-beginning-ending');
+    const resultEJS = await compile(input, {
+      templateEngine: 'ejs',
+      beginning: "<%- include('header') %>",
+      ending: "<%- include('footer') %>"
+    });
+    const resultPug = await compile(input, {
+      templateEngine: 'pug',
+      beginning: "include 'header'",
+      ending: "include 'footer'"
+    });
+    expect(resultEJS).toBe(outputEJS);
+    expect(resultPug).toBe(outputPug);
+  });
+});

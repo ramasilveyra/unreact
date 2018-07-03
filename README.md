@@ -64,6 +64,18 @@ unreact src/button.js --out-file views/button.ejs --template-engine ejs
 unreact src --out-dir views -t ejs
 ```
 
+### Add string to the beginning of the output file (`--add-beginning`)
+
+```bash
+unreact src/main.js --out-file views/main.pug --add-beginning "include header.pug"
+```
+
+### Add string to the ending of the output file (`--add-ending`)
+
+```bash
+unreact src/main.js --out-file views/main.pug --add-ending "include footer.pug"
+```
+
 <h2 align="center">Limitations</h2>
 
 **ALPHA: things may not work**
