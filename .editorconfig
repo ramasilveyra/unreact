@@ -19,5 +19,8 @@ insert_final_newline = true
 [*.md]
 trim_trailing_whitespace = false
 
+[*.ejs]
+trim_trailing_whitespace = false
+
 [*.pug]
 trim_trailing_whitespace = false

@@ -76,6 +76,12 @@ unreact src/main.js --out-file views/main.pug --add-beginning "include header.pu
 unreact src/main.js --out-file views/main.pug --add-ending "include footer.pug"
 ```
 
+### Change initial indent level (`--initial-indent-level`)
+
+```bash
+unreact src/main.js --out-file views/main.pug --initial-indent-level 1
+```
+
 <h2 align="center">Limitations</h2>
 
 **ALPHA: things may not work**

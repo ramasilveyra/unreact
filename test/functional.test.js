@@ -235,3 +235,19 @@ describe('while adding string to the beginning and ending', () => {
     expect(resultPug).toBe(outputPug);
   });
 });
+
+describe('while changing the indent level', () => {
+  it('should start indent at level 1', async () => {
+    const { input, outputEJS, outputPug } = await getTestCase('change-indent-level');
+    const resultEJS = await compile(input, {
+      templateEngine: 'ejs',
+      initialIndentLevel: 1
+    });
+    const resultPug = await compile(input, {
+      templateEngine: 'pug',
+      initialIndentLevel: 1
+    });
+    expect(resultEJS).toBe(outputEJS);
+    expect(resultPug).toBe(outputPug);
+  });
+});

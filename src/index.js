@@ -16,17 +16,21 @@ const writeFileAsync = util.promisify(fs.writeFile);
 
 export async function compile(
   inputCode,
-  { inputFile, templateEngine = 'pug', beginning = '', ending = '' } = {}
+  { inputFile, templateEngine = 'pug', beginning = '', ending = '', initialIndentLevel = 0 } = {}
 ) {
   const { ast, table } = parseTransformOptimize(inputCode, inputFile, { templateEngine });
   const codeGenerator = templateEngine === 'ejs' ? codeGeneratorEjs : codeGeneratorPug;
   if (inputFile) {
     const { bundleAST, bundleTable } = await resolveDependencies(inputFile, ast, table);
     const optimizedAST = optimize(bundleAST, bundleTable);
-    const code = generateOutputCode(codeGenerator(optimizedAST), beginning, ending);
+    const code = generateOutputCode(
+      codeGenerator(optimizedAST, { initialIndentLevel }),
+      beginning,
+      ending
+    );
     return code;
   }
-  const code = generateOutputCode(codeGenerator(ast), beginning, ending);
+  const code = generateOutputCode(codeGenerator(ast, { initialIndentLevel }), beginning, ending);
   return code;
 }
 
@@ -82,7 +86,13 @@ function generateOutputCode(code, beginning, ending) {
 export async function compileFile(
   inputFile,
   outputFile,
-  { templateEngine = 'pug', beginning = '', ending = '', progress = () => {} } = {}
+  {
+    templateEngine = 'pug',
+    beginning = '',
+    ending = '',
+    initialIndentLevel,
+    progress = () => {}
+  } = {}
 ) {
   const inputFilePath = path.resolve(process.cwd(), inputFile);
   const outputFilePath = path.resolve(process.cwd(), outputFile);
@@ -91,7 +101,8 @@ export async function compileFile(
     inputFile: inputFilePath,
     templateEngine,
     beginning,
-    ending
+    ending,
+    initialIndentLevel
   });
   const outputFilePathDir = path.dirname(outputFilePath);
   await makeDir(outputFilePathDir);
@@ -103,7 +114,13 @@ export async function compileFile(
 export async function compileDir(
   inputDir,
   outputDir,
-  { templateEngine = 'pug', beginning = '', ending = '', progress = () => {} } = {}
+  {
+    templateEngine = 'pug',
+    beginning = '',
+    ending = '',
+    initialIndentLevel,
+    progress = () => {}
+  } = {}
 ) {
   const inputDirPath = path.resolve(process.cwd(), inputDir);
   const outputDirPath = path.resolve(process.cwd(), outputDir);
@@ -116,7 +133,13 @@ export async function compileDir(
       const outputFile = filePath
         .replace(inputDirPath, outputDirPath)
         .replace(oldExtension, extension);
-      return compileFile(filePath, outputFile, { templateEngine, beginning, ending, progress });
+      return compileFile(filePath, outputFile, {
+        templateEngine,
+        beginning,
+        ending,
+        initialIndentLevel,
+        progress
+      });
     })
   );
 }

@@ -11,21 +11,34 @@ import {
   textName
 } from './ast';
 
-function codeGeneratorEjs(node, { level = 0 } = {}) {
+function codeGeneratorEjs(node, { initialIndentLevel = 0, indentLevel = initialIndentLevel } = {}) {
   switch (node.type) {
     case rootName:
-      return node.children.map(child => codeGeneratorEjs(child, { level })).join('');
+      return node.children
+        .map(child => codeGeneratorEjs(child, { initialIndentLevel, indentLevel }))
+        .join('');
     case mixinName:
-      return node.children.map(child => codeGeneratorEjs(child, { level }));
+      return node.children.map(child =>
+        codeGeneratorEjs(child, { initialIndentLevel, indentLevel })
+      );
     case elementName:
       return indent(
         generateTag(
           node.tagName,
-          node.children.map(child => codeGeneratorEjs(child, { level: level + 1 })).join(''),
-          node.attributes.map(child => codeGeneratorEjs(child, { level: level + 1 })).join('')
+          node.children
+            .map(child =>
+              codeGeneratorEjs(child, { initialIndentLevel, indentLevel: indentLevel + 1 })
+            )
+            .join(''),
+          node.attributes
+            .map(child =>
+              codeGeneratorEjs(child, { initialIndentLevel, indentLevel: indentLevel + 1 })
+            )
+            .join('')
         ),
         {
-          level
+          initialIndentLevel,
+          indentLevel
         }
       );
     case textName:
@@ -38,11 +51,13 @@ function codeGeneratorEjs(node, { level = 0 } = {}) {
       return indent(
         generateCondition(
           node.test,
-          codeGeneratorEjs(node.consequent, { level: level + 1 }),
-          node.alternate && codeGeneratorEjs(node.alternate, { level: level + 1 })
+          codeGeneratorEjs(node.consequent, { initialIndentLevel, indentLevel: indentLevel + 1 }),
+          node.alternate &&
+            codeGeneratorEjs(node.alternate, { initialIndentLevel, indentLevel: indentLevel + 1 })
         ),
         {
-          level
+          initialIndentLevel,
+          indentLevel
         }
       );
     case iterationName:
@@ -52,10 +67,11 @@ function codeGeneratorEjs(node, { level = 0 } = {}) {
           currentValue: node.currentValue,
           index: node.index,
           array: node.array,
-          body: codeGeneratorEjs(node.body, { level: level + 1 })
+          body: codeGeneratorEjs(node.body, { initialIndentLevel, indentLevel: indentLevel + 1 })
         }),
         {
-          level
+          initialIndentLevel,
+          indentLevel
         }
       );
     default:
@@ -137,12 +153,12 @@ function generateInterpolationEscaped(value) {
   return `<%= ${value} %>`;
 }
 
-function indent(str, { level }) {
+function indent(str, { initialIndentLevel, indentLevel }) {
   const indentChar = ' ';
   const indentLength = 2;
-  const startIndentNumber = level * indentLength;
-  const endIndentNumber = (level ? level - 1 : level) * indentLength;
-  const strIndented = `${level === 0 ? '' : '\n'}${indentChar.repeat(
+  const startIndentNumber = indentLevel * indentLength;
+  const endIndentNumber = (indentLevel ? indentLevel - 1 : indentLevel) * indentLength;
+  const strIndented = `${indentLevel === initialIndentLevel ? '' : '\n'}${indentChar.repeat(
     startIndentNumber
   )}${str}${'\n'}${indentChar.repeat(endIndentNumber)}`;
   return strIndented;

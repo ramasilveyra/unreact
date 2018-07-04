@@ -34,6 +34,11 @@ export default function unreactCLI(argv) {
       describe: 'Add string to the ending of the output file',
       type: 'string'
     })
+    .option('initial-indent-level', {
+      describe: 'Start at <number> indent level',
+      type: 'number',
+      default: 0
+    })
     .usage(`${pkg.description}.\nUsage: $0 <file or dir> [options]`)
     .version()
     .alias('version', 'v')
@@ -47,10 +52,17 @@ export default function unreactCLI(argv) {
   const templateEngine = parsedArgv.t;
   const beginning = parsedArgv['add-beginning'];
   const ending = parsedArgv['add-ending'];
+  const initialIndentLevel = parsedArgv['initial-indent-level'];
 
   if (fileOrDir && parsedArgv.o) {
     spinner.start();
-    return compileFile(fileOrDir, parsedArgv.o, { templateEngine, beginning, ending, progress })
+    return compileFile(fileOrDir, parsedArgv.o, {
+      templateEngine,
+      beginning,
+      ending,
+      initialIndentLevel,
+      progress
+    })
       .then(() => {
         spinner.succeed(`${chalk.bold.green('success')} file transformed to ${templateEngine}`);
       })
@@ -63,7 +75,13 @@ export default function unreactCLI(argv) {
 
   if (fileOrDir && parsedArgv.O) {
     spinner.start();
-    return compileDir(fileOrDir, parsedArgv.O, { templateEngine, beginning, ending, progress })
+    return compileDir(fileOrDir, parsedArgv.O, {
+      templateEngine,
+      beginning,
+      ending,
+      initialIndentLevel,
+      progress
+    })
       .then(() => {
         spinner.succeed(`${chalk.bold.green('success')} folder transformed to ${templateEngine}`);
       })

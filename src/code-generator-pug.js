@@ -11,12 +11,19 @@ import {
   textName
 } from './ast';
 
-function codeGeneratorPug(node, { level = 0, previousSibling = null } = {}) {
+function codeGeneratorPug(
+  node,
+  { initialIndentLevel = 0, indentLevel = initialIndentLevel, previousSibling = null } = {}
+) {
   switch (node.type) {
     case rootName:
-      return node.children.map(child => codeGeneratorPug(child, { level })).join('');
+      return node.children
+        .map(child => codeGeneratorPug(child, { initialIndentLevel, indentLevel }))
+        .join('');
     case mixinName:
-      return node.children.map(child => codeGeneratorPug(child, { level }));
+      return node.children.map(child =>
+        codeGeneratorPug(child, { initialIndentLevel, indentLevel })
+      );
     case elementName:
       return indent(
         generateTag(
@@ -24,39 +31,51 @@ function codeGeneratorPug(node, { level = 0, previousSibling = null } = {}) {
           node.children
             .map((child, i) =>
               codeGeneratorPug(child, {
-                level: level + 1,
+                initialIndentLevel,
+                indentLevel: indentLevel + 1,
                 previousSibling: i > 0 ? node.children[i - 1] : null
               })
             )
             .join(''),
-          node.attributes.map(child => codeGeneratorPug(child, { level: level + 1 })).join(', ')
+          node.attributes
+            .map(child =>
+              codeGeneratorPug(child, { initialIndentLevel, indentLevel: indentLevel + 1 })
+            )
+            .join(', ')
         ),
         {
-          level
+          initialIndentLevel,
+          indentLevel
         }
       );
     case textName:
       if (previousSibling && previousSibling.type === elementName) {
-        return indent(`| ${node.value}`, { level });
+        return indent(`| ${node.value}`, { initialIndentLevel, indentLevel });
       }
       return node.value;
     case attributeName:
       return generateProperty(node.name, node.value, node.expression);
     case interpolationEscapedName:
       if (previousSibling && previousSibling.type === elementName) {
-        return indent(`| ${generateInterpolationEscaped(node.value)}`, { level });
+        return indent(`| ${generateInterpolationEscaped(node.value)}`, {
+          initialIndentLevel,
+          indentLevel
+        });
       }
       return generateInterpolationEscaped(node.value);
     case conditionName:
       return indent(
         generateCondition(
           node.test,
-          codeGeneratorPug(node.consequent, { level: level + 1 }),
-          node.alternate && codeGeneratorPug(node.alternate, { level: level + 1 }),
-          level + 1
+          codeGeneratorPug(node.consequent, { initialIndentLevel, indentLevel: indentLevel + 1 }),
+          node.alternate &&
+            codeGeneratorPug(node.alternate, { initialIndentLevel, indentLevel: indentLevel + 1 }),
+          initialIndentLevel,
+          indentLevel + 1
         ),
         {
-          level
+          initialIndentLevel,
+          indentLevel
         }
       );
     case iterationName:
@@ -66,11 +85,13 @@ function codeGeneratorPug(node, { level = 0, previousSibling = null } = {}) {
           currentValue: node.currentValue,
           index: node.index,
           array: node.array,
-          body: codeGeneratorPug(node.body, { level: level + 1 }),
-          level
+          body: codeGeneratorPug(node.body, { initialIndentLevel, indentLevel: indentLevel + 1 }),
+          initialIndentLevel,
+          indentLevel
         }),
         {
-          level
+          initialIndentLevel,
+          indentLevel
         }
       );
     default:
@@ -118,23 +139,40 @@ function normalizePropertyName(name) {
   }
 }
 
-function generateCondition(test, consequent, alternate, level) {
-  const newConsequent = consequent[0] === '\n' ? consequent : indent(consequent, { level });
+function generateCondition(test, consequent, alternate, initialIndentLevel, indentLevel) {
+  const newConsequent =
+    consequent[0] === '\n' ? consequent : indent(consequent, { initialIndentLevel, indentLevel });
   const alternateOrNull = stuff => (alternate ? stuff() : null);
   const conditionArray = [
     `if ${test}`,
     newConsequent,
-    alternateOrNull(() => indent('else', { level: level - 1 })),
-    alternateOrNull(() => (alternate[0] === '\n' ? alternate : indent(alternate, { level })))
+    alternateOrNull(() => indent('else', { initialIndentLevel, indentLevel: indentLevel - 1 })),
+    alternateOrNull(
+      () =>
+        alternate[0] === '\n' ? alternate : indent(alternate, { initialIndentLevel, indentLevel })
+    )
   ].filter(Boolean);
   return conditionArray.join('');
 }
 
-function generateIteration({ iterable, currentValue, index, array, body, level }) {
+function generateIteration({
+  iterable,
+  currentValue,
+  index,
+  array,
+  body,
+  initialIndentLevel,
+  indentLevel
+}) {
   const params = [currentValue, index].filter(Boolean).join(', ');
   const iterationArray = [
     `each ${params} in ${iterable}`,
-    array ? indent(generateScriptlet(`const ${array} = ${iterable};`), { level: level + 1 }) : null,
+    array
+      ? indent(generateScriptlet(`const ${array} = ${iterable};`), {
+          initialIndentLevel,
+          indentLevel: indentLevel + 1
+        })
+      : null,
     body
   ].filter(Boolean);
   return iterationArray.join('');
@@ -148,11 +186,11 @@ function generateInterpolationEscaped(value) {
   return `#{${value}}`;
 }
 
-function indent(str, { level }) {
+function indent(str, { initialIndentLevel, indentLevel }) {
   const indentChar = ' ';
   const indentLength = 2;
-  const startIndentNumber = level * indentLength;
-  const isRoot = level === 0;
+  const startIndentNumber = indentLevel * indentLength;
+  const isRoot = indentLevel === initialIndentLevel;
   const strIndented = `${isRoot ? '' : '\n'}${indentChar.repeat(startIndentNumber)}${str}${
     isRoot ? '\n' : ''
   }`;
