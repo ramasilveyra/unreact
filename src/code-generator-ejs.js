@@ -1,5 +1,7 @@
 /* eslint-disable no-param-reassign */
 import htmlTagsVoids from 'html-tags/void';
+import babelTraverse from '@babel/traverse';
+import parse from './parser';
 import {
   attributeName,
   conditionName,
@@ -103,9 +105,16 @@ function generateProperty(name, value, expression) {
   }
 
   if (expression) {
-    return `${generateScriptlet(
-      `if (![null,undefined].includes(${value})) {`
-    )}${startPropertyBeginning}="${generateInterpolationEscaped(value)}"${generateScriptlet('}')}`;
+    const result = isNullOrUndefined(value);
+    const propertyInterpolated = `${startPropertyBeginning}="${generateInterpolationEscaped(
+      value
+    )}"`;
+    if (result) {
+      return `${generateScriptlet(
+        `if (![null,undefined].includes(${value})) {`
+      )}${propertyInterpolated}${generateScriptlet('}')}`;
+    }
+    return propertyInterpolated;
   }
 
   return `${startPropertyBeginning}="${value}"`;
@@ -162,4 +171,30 @@ function indent(str, { initialIndentLevel, indentLevel }) {
     startIndentNumber
   )}${str}${'\n'}${indentChar.repeat(endIndentNumber)}`;
   return strIndented;
+}
+
+function isNullOrUndefined(code) {
+  let evaluates = null;
+  babelTraverse(
+    parse(`(${code})`),
+    {
+      Program(path) {
+        const body = path.get('body');
+        if (!body) {
+          return;
+        }
+        const bodyChild = body[0];
+        if (!bodyChild) {
+          return;
+        }
+        evaluates = bodyChild.evaluate();
+      }
+    },
+    null
+  );
+  if (evaluates.confident) {
+    const result = [null, undefined].includes(evaluates.value);
+    return result;
+  }
+  return true;
 }

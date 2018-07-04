@@ -96,6 +96,19 @@ function inlinepProps(ast, props) {
         // 2. Dead code elimination.
         if (node.value === 'undefined') {
           parent.attributes = parent.attributes.filter(attr => attr !== node);
+          return;
+        }
+        if (node.expression) {
+          const result = evaluate(node.value);
+          const remove = result.confident && [null, undefined].includes(result.value);
+          if (remove) {
+            parent.attributes = parent.attributes.filter(attr => attr !== node);
+            return;
+          }
+          if (result.confident) {
+            node.value = result.value;
+            node.expression = false;
+          }
         }
       }
     },
@@ -149,9 +162,6 @@ function inlinepProps(ast, props) {
     Condition: {
       enter(node, parent) {
         // 1. Inlining.
-        if (!node.test) {
-          return;
-        }
         const test = new MagicString(node.test);
         const propsToChange = props.filter(prop => prop.value && node.identifiers[prop.name]);
         const propsToNotChange = props.filter(prop => !prop.value && node.identifiers[prop.name]);
@@ -205,28 +215,6 @@ function inlinepProps(ast, props) {
   });
 }
 
-function isTruthy(code) {
-  let evaluates = null;
-  babelTraverse(
-    parse(`(${code})`),
-    {
-      Program(path) {
-        const body = path.get('body');
-        if (!body) {
-          return;
-        }
-        const bodyChild = body[0];
-        if (!bodyChild) {
-          return;
-        }
-        evaluates = bodyChild.evaluateTruthy();
-      }
-    },
-    null
-  );
-  return evaluates;
-}
-
 // function makeReferenceSafe(node, prop, magicString, key = 'value') {
 //   const propIDs = node.identifiers[prop.name];
 //   propIDs.forEach(propID => {
@@ -244,4 +232,40 @@ function makeUndefined(node, prop, magicString, key = 'value') {
     magicString.overwrite(propID.start, propID.end, content);
   });
   node[key] = magicString.toString();
+}
+
+function isTruthy(code) {
+  const bodyChild = getBodyChild(code);
+  if (!bodyChild) {
+    return null;
+  }
+  const evaluates = bodyChild.evaluateTruthy();
+  return evaluates;
+}
+
+function evaluate(code) {
+  const bodyChild = getBodyChild(code);
+  if (!bodyChild) {
+    return null;
+  }
+  const evaluates = bodyChild.evaluate();
+  return evaluates;
+}
+
+function getBodyChild(code) {
+  let bodyChild = null;
+  babelTraverse(
+    parse(`(${code})`),
+    {
+      Program(path) {
+        const body = path.get('body');
+        if (!body) {
+          return;
+        }
+        bodyChild = body[0];
+      }
+    },
+    null
+  );
+  return bodyChild;
 }
