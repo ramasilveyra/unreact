@@ -19,9 +19,9 @@ export default function traverser(ast, visitor) {
   function traverseNode(node, parent) {
     const method = visitor[node.type];
 
-    // if (method && method.enter) {
-    //   method.enter(node, parent);
-    // }
+    if (method && method.enter) {
+      method.enter(node, parent);
+    }
 
     switch (node.type) {
       case rootName:

@@ -2,8 +2,10 @@
 import htmlTags from 'html-tags';
 import _ from 'lodash';
 import MagicString from 'magic-string';
+import babelTraverse from '@babel/traverse';
 import traverser from './traverser';
-import { textName } from './ast';
+import { conditionName, textName } from './ast';
+import parse from './parser';
 
 function optimize(ast, table) {
   traverser(ast, {
@@ -64,6 +66,7 @@ function inlinepProps(ast, props) {
   traverser(ast, {
     Attribute: {
       exit(node, parent) {
+        // 1. Inlining.
         if (!node.identifiers) {
           return;
         }
@@ -71,9 +74,6 @@ function inlinepProps(ast, props) {
         const propsToChange = props.filter(prop => prop.value && node.identifiers[prop.name]);
         const propsToNotChange = props.filter(prop => !prop.value && node.identifiers[prop.name]);
         propsToNotChange.forEach(prop => makeUndefined(node, prop, value));
-        if (node.value === 'undefined') {
-          parent.attributes = parent.attributes.filter(attr => attr !== node);
-        }
         propsToChange.forEach(prop => {
           const propIDs = node.identifiers[prop.name];
           const propValue = prop.value.value;
@@ -93,19 +93,19 @@ function inlinepProps(ast, props) {
           });
         });
         node.value = value.toString();
+        // 2. Dead code elimination.
+        if (node.value === 'undefined') {
+          parent.attributes = parent.attributes.filter(attr => attr !== node);
+        }
       }
     },
     InterpolationEscaped: {
       exit(node, parent) {
+        // 1. Inlining.
         const value = new MagicString(node.value);
         const propsToChange = props.filter(prop => prop.value && node.identifiers[prop.name]);
         const propsToNotChange = props.filter(prop => !prop.value && node.identifiers[prop.name]);
         propsToNotChange.forEach(prop => makeUndefined(node, prop, value));
-        if (node.value === 'undefined') {
-          // HACK: to "remove" InterpolationEscaped.
-          node.value = '';
-          node.type = 'Text';
-        }
         propsToChange.forEach(prop => {
           const propIDs = node.identifiers[prop.name];
           const propValue = prop.value.value;
@@ -130,6 +130,12 @@ function inlinepProps(ast, props) {
           });
           node.value = value.toString();
         });
+        // 2. Dead code elimination.
+        if (node.value === 'undefined') {
+          // HACK: to "remove" InterpolationEscaped.
+          node.value = '';
+          node.type = textName;
+        }
       }
     },
     Iteration: {
@@ -141,7 +147,11 @@ function inlinepProps(ast, props) {
       }
     },
     Condition: {
-      exit(node) {
+      enter(node, parent) {
+        // 1. Inlining.
+        if (!node.test) {
+          return;
+        }
         const test = new MagicString(node.test);
         const propsToChange = props.filter(prop => prop.value && node.identifiers[prop.name]);
         const propsToNotChange = props.filter(prop => !prop.value && node.identifiers[prop.name]);
@@ -158,9 +168,63 @@ function inlinepProps(ast, props) {
           });
           node.test = test.toString();
         });
+        // 2. Dead code elimination.
+        const evaluates = isTruthy(node.test);
+        if (evaluates === false) {
+          if (parent.type === conditionName) {
+            delete parent.type;
+            delete parent.test;
+            delete parent.alternate;
+            delete parent.consequent;
+            delete parent.identifiers;
+            Object.assign(parent, node.alternate);
+            return;
+          }
+          parent.children = parent.children
+            .map(child => {
+              if (child === node) {
+                return node.alternate;
+              }
+              return child;
+            })
+            .filter(Boolean);
+          return;
+        }
+        if (evaluates === true) {
+          parent.children = parent.children
+            .map(child => {
+              if (child === node) {
+                return node.consequent;
+              }
+              return child;
+            })
+            .filter(Boolean);
+        }
       }
     }
   });
+}
+
+function isTruthy(code) {
+  let evaluates = null;
+  babelTraverse(
+    parse(`(${code})`),
+    {
+      Program(path) {
+        const body = path.get('body');
+        if (!body) {
+          return;
+        }
+        const bodyChild = body[0];
+        if (!bodyChild) {
+          return;
+        }
+        evaluates = bodyChild.evaluateTruthy();
+      }
+    },
+    null
+  );
+  return evaluates;
 }
 
 // function makeReferenceSafe(node, prop, magicString, key = 'value') {
