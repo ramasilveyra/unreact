@@ -12,6 +12,18 @@ const Foo = ({ showIcon }) => (
 const Foo2 = ({ showIcon, reallyShowIcon }) => (
   <div>{showIcon && reallyShowIcon ? <span className="icon icon-123">Menu</span> : 'Hi!'}</div>
 );
+const Button = ({ appearance, noMarginTop, onClick, innerRef, children }) => (
+  <button
+    disabled={disabled}
+    className={`hlp-button hlp-button-${appearance || 'default'} ${
+      noMarginTop ? 'no-margin-top' : ''
+    }`}
+    onClick={onClick}
+    ref={innerRef}
+  >
+    {children}
+  </button>
+);
 const Main = ({ list }) => (
   <Container>
     <Notice />
@@ -24,6 +36,7 @@ const Main = ({ list }) => (
     <Foo2 showIcon reallyShowIcon />
     <Hi />
     <Bye />
+    <Button>Hola</Button>
   </Container>
 );
 

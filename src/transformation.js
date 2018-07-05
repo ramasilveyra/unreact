@@ -101,8 +101,8 @@ function transformation(oldAst, inputFilePath) {
         return;
       }
       const expression = path.get('value.expression');
-      const identifiers = getIdentifiersInfo(expression);
       if (t.isJSXExpressionContainer(valueNode) && t.isIdentifier(expression.node)) {
+        const identifiers = getIdentifiersInfo(expression);
         const attribute = createAttribute({
           name,
           value: expression.node.name,
@@ -124,8 +124,24 @@ function transformation(oldAst, inputFilePath) {
         }
         return;
       }
-      const { code } = babelGenerator(expression.node, { concise: true });
-      const attribute = createAttribute({ name, value: code, expression: true, identifiers });
+
+      const generated = babelGenerator(expression.node, { concise: true, sourceMaps: true });
+      const identifiers = getIdentifiersInfo(expression);
+      const fixedIdentifiers = Object.keys(identifiers).reduce((obj, key) => {
+        const keyMappings = generated.rawMappings.filter(keyMapping => keyMapping.name === key);
+        obj[key] = identifiers[key].map((indentifier, i) => {
+          const start = keyMappings[i].generated.column;
+          const end = start + key.length;
+          return { start, end };
+        });
+        return obj;
+      }, {});
+      const attribute = createAttribute({
+        name,
+        value: generated.code,
+        expression: true,
+        identifiers: fixedIdentifiers
+      });
       addToContext(context, attribute, 'attributes');
     },
     CallExpression(path) {
