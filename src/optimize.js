@@ -120,12 +120,17 @@ function inlinepProps(ast, props) {
         const propsToNotChange = props.filter(prop => !prop.value && node.identifiers[prop.name]);
         propsToNotChange.forEach(prop => makeUndefined(node, prop, value));
         propsToChange.forEach(prop => {
-          const propIDs = node.identifiers[prop.name];
-          const propValue = prop.value.value;
-          if (!propValue) {
-            parent.children = prop.value;
+          if (prop.name === 'children') {
+            const position = parent.children.findIndex(child => child.value === 'children');
+            parent.children = [
+              ...parent.children.slice(0, position),
+              ...prop.value,
+              ...parent.children.slice(position + 1)
+            ];
             return;
           }
+          const propIDs = node.identifiers[prop.name];
+          const propValue = prop.value.value;
           const canMakeText =
             Object.keys(node.identifiers).length === 1 &&
             propIDs.length === 1 &&
