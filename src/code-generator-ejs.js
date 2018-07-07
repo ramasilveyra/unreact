@@ -20,9 +20,9 @@ function codeGeneratorEjs(node, { initialIndentLevel = 0, indentLevel = initialI
         .map(child => codeGeneratorEjs(child, { initialIndentLevel, indentLevel }))
         .join('');
     case mixinName:
-      return node.children.map(child =>
-        codeGeneratorEjs(child, { initialIndentLevel, indentLevel })
-      );
+      return node.children
+        .map(child => codeGeneratorEjs(child, { initialIndentLevel, indentLevel }))
+        .join('');
     case elementName:
       return indent(
         generateTag(

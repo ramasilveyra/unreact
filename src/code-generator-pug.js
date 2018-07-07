@@ -21,9 +21,9 @@ function codeGeneratorPug(
         .map(child => codeGeneratorPug(child, { initialIndentLevel, indentLevel }))
         .join('');
     case mixinName:
-      return node.children.map(child =>
-        codeGeneratorPug(child, { initialIndentLevel, indentLevel })
-      );
+      return node.children
+        .map(child => codeGeneratorPug(child, { initialIndentLevel, indentLevel }))
+        .join('');
     case elementName:
       return indent(
         generateTag(
