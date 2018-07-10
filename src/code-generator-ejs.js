@@ -1,7 +1,5 @@
 /* eslint-disable no-param-reassign */
 import htmlTagsVoids from 'html-tags/void';
-import babelTraverse from '@babel/traverse';
-import parse from './parser';
 import {
   attributeName,
   conditionName,
@@ -12,6 +10,7 @@ import {
   rootName,
   textName
 } from './ast';
+import getBodyChild from './utils/get-body-child';
 
 function codeGeneratorEjs(node, { initialIndentLevel = 0, indentLevel = initialIndentLevel } = {}) {
   switch (node.type) {
@@ -174,24 +173,11 @@ function indent(str, { initialIndentLevel, indentLevel }) {
 }
 
 function isNullOrUndefined(code) {
-  let evaluates = null;
-  babelTraverse(
-    parse(`(${code})`),
-    {
-      Program(path) {
-        const body = path.get('body');
-        if (!body) {
-          return;
-        }
-        const bodyChild = body[0];
-        if (!bodyChild) {
-          return;
-        }
-        evaluates = bodyChild.evaluate();
-      }
-    },
-    null
-  );
+  const bodyChild = getBodyChild(code);
+  if (!bodyChild) {
+    return true;
+  }
+  const evaluates = bodyChild.evaluate();
   if (evaluates.confident) {
     const result = [null, undefined].includes(evaluates.value);
     return result;
