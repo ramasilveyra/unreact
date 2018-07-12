@@ -1,0 +1,13 @@
+<div>
+  {% if showIcon %}
+    <span class="icon icon-123">Menu</span>
+  {% endif %}
+
+  {% if showIcon and showIconTwice %}
+    <span class="icon icon-123">Menu</span>
+  {% endif %}
+
+  {% if showIcon %}{{ showIcon }}{% else %}
+    <span class="icon icon-321">Close</span>
+  {% endif %}
+</div>

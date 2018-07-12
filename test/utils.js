@@ -6,7 +6,8 @@ export async function getTestCase(folder) {
   const input = await getFixture(`${folder}/input.js`);
   const outputEJS = await getFixture(`${folder}/output.ejs`);
   const outputPug = await getFixture(`${folder}/output.pug`);
-  return { input, outputEJS, outputPug };
+  const outputLiquid = await getFixture(`${folder}/output.liquid`);
+  return { input, outputEJS, outputPug, outputLiquid };
 }
 
 const readFileAsync = util.promisify(fs.readFile);

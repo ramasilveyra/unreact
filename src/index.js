@@ -7,19 +7,31 @@ import globby from 'globby';
 import parser from './parser';
 import transformation from './transformation';
 import DependencyGraph from './deps-graph';
+
 import codeGeneratorEjs from './code-generator-ejs';
+import codeGeneratorLiquid from './code-generator-liquid';
 import codeGeneratorPug from './code-generator-pug';
+
 import optimize from './optimize';
 
 const readFileAsync = util.promisify(fs.readFile);
 const writeFileAsync = util.promisify(fs.writeFile);
+
+const generators = {
+  ejs: codeGeneratorEjs,
+  liquid: codeGeneratorLiquid,
+  pug: codeGeneratorPug
+};
 
 export async function compile(
   inputCode,
   { inputFile, templateEngine = 'pug', beginning = '', ending = '', initialIndentLevel = 0 } = {}
 ) {
   const { ast, table } = parseTransformOptimize(inputCode, inputFile, { templateEngine });
-  const codeGenerator = templateEngine === 'ejs' ? codeGeneratorEjs : codeGeneratorPug;
+  const codeGenerator = generators[templateEngine];
+  if (!codeGenerator) {
+    throw new Error(`unknown code generator for ${templateEngine}`);
+  }
   if (inputFile) {
     const { bundleAST, bundleTable } = await resolveDependencies(inputFile, ast, table);
     const optimizedAST = optimize(bundleAST, bundleTable);

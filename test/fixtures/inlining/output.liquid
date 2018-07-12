@@ -1,0 +1,35 @@
+<div>
+  <p>This list:</p>
+
+  <ul>
+    {% assign iterator = "John|Doe" | split: '|' %}{% for item in iterator %}
+      <li>{{ item }}</li>
+    {% endfor %}
+  </ul>
+
+  <div>Hola!</div>
+
+  <div>Chau!</div>
+
+  <div>
+    <span class="icon icon-123">Menu</span>
+  </div>
+
+  <div>
+    <span class="icon icon-123">Menu</span>
+  </div>
+
+  <div>
+    <span class="icon icon-123">Menu</span>
+  </div>
+
+  <div>
+    <span class="icon icon-123">Menu</span>
+  </div>
+
+  <p></p>
+
+  <p>bye</p>
+
+  <button {% if disabled %}disabled{% endif %} class="hlp-button hlp-button-default ">Hola</button>
+</div>

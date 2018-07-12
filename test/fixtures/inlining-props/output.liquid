@@ -1,0 +1,13 @@
+<div class="container">
+  <p>This {{ name }} list is awesome
+    <strong>{{ name }} is awesome</strong>
+  </p>
+
+  <ul>
+    {% for item in list %}
+      <li>{{ item }}</li>
+    {% endfor %}
+  </ul>
+
+  <button class="btn btn-light">Submit</button>
+</div>

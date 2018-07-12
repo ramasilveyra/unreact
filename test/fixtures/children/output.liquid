@@ -1,0 +1,17 @@
+<section class="hlp-box">
+  <main class="hlp-container hlp-event-screen">
+    <div class="event-img-container">
+      <span class="event-img {{ type }}"></span>
+    </div>
+  
+    <section class="event-container">
+      {% if eventTitle %}
+        <h3 class="event-title">{{ eventTitle }}</h3>
+      {% endif %}
+    
+      {% if eventText %}
+        <div class="event-text">{{ eventText }}</div>
+      {% endif %}
+    {{ children }}</section>
+  </main>
+</section>
