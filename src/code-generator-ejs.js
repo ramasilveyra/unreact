@@ -1,5 +1,8 @@
 /* eslint-disable no-param-reassign */
 import htmlTagsVoids from 'html-tags/void';
+import * as t from '@babel/types';
+import babelTraverse from '@babel/traverse';
+import parse from './parser';
 import {
   attributeName,
   conditionName,
@@ -104,11 +107,13 @@ function generateProperty(name, value, expression) {
   }
 
   if (expression) {
-    const result = isNullOrUndefined(value);
+    // TODO: property nodes that are expressions should have the babel ast so `isNullOrUndefined()` or `isString()` doesn't need to parse again.
+    const resultNullOrUndefined = isNullOrUndefined(value);
+    const resultString = isString(value);
     const propertyInterpolated = `${startPropertyBeginning}="${generateInterpolationEscaped(
       value
     )}"`;
-    if (result) {
+    if (!resultString && resultNullOrUndefined) {
       return `${generateScriptlet(
         `if (![null,undefined].includes(${value})) {`
       )}${propertyInterpolated}${generateScriptlet('}')}`;
@@ -183,4 +188,43 @@ function isNullOrUndefined(code) {
     return result;
   }
   return true;
+}
+
+function isString(code) {
+  const ast = parse(`(${code})`);
+  let is = false;
+  babelTraverse(
+    ast,
+    {
+      Program(path) {
+        const body = path.get('body');
+        if (!body) {
+          return;
+        }
+        const bodyChild = body[0];
+        if (t.isTemplateLiteral(bodyChild.node.expression)) {
+          is = true;
+        }
+      },
+      BinaryExpression(path) {
+        if (path.node.operator !== '+') {
+          return;
+        }
+        const nodeLeft = path.node.left;
+        const nodeRight = path.node.right;
+        if (
+          t.isTaggedTemplateExpression(nodeLeft) ||
+          t.isStringLiteral(nodeLeft) ||
+          t.isTemplateLiteral(nodeLeft) ||
+          t.isTaggedTemplateExpression(nodeRight) ||
+          t.isStringLiteral(nodeRight) ||
+          t.isTemplateLiteral(nodeRight)
+        ) {
+          is = true;
+        }
+      }
+    },
+    null
+  );
+  return is;
 }

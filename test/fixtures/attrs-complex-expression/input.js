@@ -6,6 +6,8 @@ const Foo = ({ className, otherClassName, getId, name }) => (
     className={className + otherClassName}
     tabIndex={80 / 2 + 3}
     placeholder={`Please type your ${name}`}
+    data-placeholder-1={`Please type your` + name}
+    data-placeholder-2={'Please type your' + name}
   />
 );
 
