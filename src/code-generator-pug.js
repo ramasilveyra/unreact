@@ -10,6 +10,7 @@ import {
   rootName,
   textName
 } from './ast';
+import normalizePropertyName from './utils/normalize-property-name';
 
 function codeGeneratorPug(
   node,
@@ -124,19 +125,6 @@ function generateProperty(name, value, expression) {
   }
 
   return `${normalizedName}="${value}"`;
-}
-
-function normalizePropertyName(name) {
-  switch (name) {
-    case 'className':
-      return 'class';
-    case 'htmlFor':
-      return 'for';
-    case 'tabIndex':
-      return 'tabindex';
-    default:
-      return name;
-  }
 }
 
 function generateCondition(test, consequent, alternate, initialIndentLevel, indentLevel) {

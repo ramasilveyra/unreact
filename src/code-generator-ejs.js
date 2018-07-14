@@ -13,6 +13,7 @@ import {
   rootName,
   textName
 } from './ast';
+import normalizePropertyName from './utils/normalize-property-name';
 import getBodyChild from './utils/get-body-child';
 
 function codeGeneratorEjs(node, { initialIndentLevel = 0, indentLevel = initialIndentLevel } = {}) {
@@ -122,19 +123,6 @@ function generateProperty(name, value, expression) {
   }
 
   return `${startPropertyBeginning}="${value}"`;
-}
-
-function normalizePropertyName(name) {
-  switch (name) {
-    case 'className':
-      return 'class';
-    case 'htmlFor':
-      return 'for';
-    case 'tabIndex':
-      return 'tabindex';
-    default:
-      return name;
-  }
 }
 
 function generateCondition(test, consequent, alternate) {
