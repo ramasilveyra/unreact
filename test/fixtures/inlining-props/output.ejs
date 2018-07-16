@@ -10,4 +10,10 @@
   </ul>
 
   <button class="btn btn-light">Submit</button>
+
+  <div>
+    <% if (error && 'E-mail must be valid.') { %>
+      <p class="ulp-input-message ulp-input-errormsg">E-mail must be valid.</p>
+    <% } %>
+  </div>
 </div>

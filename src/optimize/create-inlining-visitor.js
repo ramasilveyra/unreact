@@ -89,12 +89,9 @@ function inlining(props) {
         propsToChange.forEach(prop => {
           const propIDs = node.identifiers[prop.name];
           const propValue = prop.value.value;
-          if (prop.value.expression === false) {
-            node.test = `"${propValue}"`;
-            return;
-          }
           propIDs.forEach(propID => {
-            test.overwrite(propID.start, propID.end, String(propValue));
+            const newValue = prop.value.expression === false ? `'${propValue}'` : String(propValue);
+            test.overwrite(propID.start, propID.end, newValue);
           });
           node.test = test.toString();
         });
