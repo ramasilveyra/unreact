@@ -1,3 +1,4 @@
+/* eslint-disable no-param-reassign, no-underscore-dangle */
 import {
   attributeName,
   conditionName,
@@ -18,6 +19,8 @@ export default function traverser(ast, visitor) {
 
   function traverseNode(node, parent) {
     const method = visitor[node.type];
+
+    node._parent = parent;
 
     if (method && method.enter) {
       method.enter(node, parent);

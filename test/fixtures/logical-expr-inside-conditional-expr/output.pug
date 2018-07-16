@@ -1,7 +1,7 @@
 div
   if error && errorMsg
     p(class="hlp-input-message hlp-input-errormsg") #{errorMsg}
-  if !(onlyLogo)
+  if !onlyLogo
     if text
       #{text}
     else

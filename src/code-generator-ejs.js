@@ -1,8 +1,7 @@
 /* eslint-disable no-param-reassign */
 import htmlTagsVoids from 'html-tags/void';
 import * as t from '@babel/types';
-import babelTraverse from '@babel/traverse';
-import parse from './parser';
+import babelGenerator from '@babel/generator';
 import {
   attributeName,
   conditionName,
@@ -14,7 +13,6 @@ import {
   textName
 } from './ast';
 import normalizePropertyName from './utils/normalize-property-name';
-import getBodyChild from './utils/get-body-child';
 
 function codeGeneratorEjs(node, { initialIndentLevel = 0, indentLevel = initialIndentLevel } = {}) {
   switch (node.type) {
@@ -49,13 +47,19 @@ function codeGeneratorEjs(node, { initialIndentLevel = 0, indentLevel = initialI
     case textName:
       return node.value;
     case attributeName:
-      return generateProperty(node.name, node.value, node.expression);
+      return generateProperty({
+        name: node.name,
+        isBoolean: node.isBoolean,
+        isString: node.isString,
+        value: node.value,
+        valuePath: node.valuePath
+      });
     case interpolationEscapedName:
-      return generateInterpolationEscaped(node.value);
+      return generateInterpolationEscaped(node.valuePath);
     case conditionName:
       return indent(
         generateCondition(
-          node.test,
+          node.testPath,
           codeGeneratorEjs(node.consequent, { initialIndentLevel, indentLevel: indentLevel + 1 }),
           node.alternate &&
             codeGeneratorEjs(node.alternate, { initialIndentLevel, indentLevel: indentLevel + 1 })
@@ -68,10 +72,10 @@ function codeGeneratorEjs(node, { initialIndentLevel = 0, indentLevel = initialI
     case iterationName:
       return indent(
         generateIteration({
-          iterable: node.iterable,
-          currentValue: node.currentValue,
-          index: node.index,
-          array: node.array,
+          iterablePath: node.iterablePath,
+          currentValuePath: node.currentValuePath,
+          indexPath: node.indexPath,
+          arrayPath: node.arrayPath,
           body: codeGeneratorEjs(node.body, { initialIndentLevel, indentLevel: indentLevel + 1 })
         }),
         {
@@ -98,36 +102,35 @@ function generateTag(tagName, children, properties) {
   return tag;
 }
 
-function generateProperty(name, value, expression) {
+function generateProperty({ name, isBoolean, isString, value, valuePath }) {
   const normalizedName = normalizePropertyName(name);
   const startPropertyBeginning = ` ${normalizedName}`;
 
-  // NOTE: `value === true` is to accept boolean attributes, e.g.: `<input checked />`.
-  if (value === true) {
+  if (isBoolean) {
     return startPropertyBeginning;
   }
 
-  if (expression) {
-    // TODO: property nodes that are expressions should have the babel ast so `isNullOrUndefined()` or `isString()` doesn't need to parse again.
-    const resultNullOrUndefined = isNullOrUndefined(value);
-    const resultString = isString(value);
-    const propertyInterpolated = `${startPropertyBeginning}="${generateInterpolationEscaped(
-      value
-    )}"`;
-    if (!resultString && resultNullOrUndefined) {
-      return `${generateScriptlet(
-        `if (![null,undefined].includes(${value})) {`
-      )}${propertyInterpolated}${generateScriptlet('}')}`;
-    }
-    return propertyInterpolated;
+  if (isString) {
+    return `${startPropertyBeginning}="${value}"`;
   }
 
-  return `${startPropertyBeginning}="${value}"`;
+  const generatedValue = babelGenerator(valuePath.node, { concise: true });
+  const resultString = resolvesToString(valuePath);
+  const propertyInterpolated = `${startPropertyBeginning}="${generateInterpolationEscaped(
+    valuePath
+  )}"`;
+  if (!resultString) {
+    return `${generateScriptlet(
+      `if (![null,undefined].includes(${generatedValue.code})) {`
+    )}${propertyInterpolated}${generateScriptlet('}')}`;
+  }
+  return propertyInterpolated;
 }
 
-function generateCondition(test, consequent, alternate) {
+function generateCondition(testPath, consequent, alternate) {
+  const generatedValue = babelGenerator(testPath.node, { concise: true });
   const conditionArray = [
-    generateScriptlet(`if (${test}) {`),
+    generateScriptlet(`if (${generatedValue.code}) {`),
     consequent,
     alternate ? generateScriptlet('} else {') : null,
     alternate,
@@ -136,10 +139,16 @@ function generateCondition(test, consequent, alternate) {
   return conditionArray.join('');
 }
 
-function generateIteration({ iterable, currentValue, index, array, body }) {
-  const params = [currentValue, index, array].filter(Boolean).join(', ');
+function generateIteration({ iterablePath, currentValuePath, indexPath, arrayPath, body }) {
+  const iterableCode = babelGenerator(iterablePath.node, { concise: true }).code;
+  const currentValueCode = currentValuePath
+    ? babelGenerator(currentValuePath.node, { concise: true }).code
+    : null;
+  const indexCode = indexPath ? babelGenerator(indexPath.node, { concise: true }).code : null;
+  const arrayCode = arrayPath ? babelGenerator(arrayPath.node, { concise: true }).code : null;
+  const params = [currentValueCode, indexCode, arrayCode].filter(Boolean).join(', ');
   const iterationArray = [
-    generateScriptlet(`${iterable}.forEach((${params}) => {`),
+    generateScriptlet(`${iterableCode}.forEach((${params}) => {`),
     body,
     generateScriptlet('})')
   ].filter(Boolean);
@@ -150,8 +159,9 @@ function generateScriptlet(value) {
   return `<% ${value} %>`;
 }
 
-function generateInterpolationEscaped(value) {
-  return `<%= ${value} %>`;
+function generateInterpolationEscaped(valuePath) {
+  const generatedValue = babelGenerator(valuePath.node, { concise: true });
+  return `<%= ${generatedValue.code} %>`;
 }
 
 function indent(str, { initialIndentLevel, indentLevel }) {
@@ -165,59 +175,30 @@ function indent(str, { initialIndentLevel, indentLevel }) {
   return strIndented;
 }
 
-function isNullOrUndefined(code) {
-  const bodyChild = getBodyChild(code);
-  if (!bodyChild) {
+function resolvesToString(path) {
+  if (t.isTemplateLiteral(path.node)) {
     return true;
   }
-  const evaluates = bodyChild.evaluate();
-  if (evaluates.confident) {
-    const result = [null, undefined].includes(evaluates.value);
-    return result;
+  if (
+    t.isConditionalExpression(path.node) &&
+    t.isStringLiteral(path.node.consequent) &&
+    t.isStringLiteral(path.node.alternate)
+  ) {
+    return true;
   }
-  return true;
-}
-
-function isString(code) {
-  const ast = parse(`(${code})`);
-  let is = false;
-  babelTraverse(
-    ast,
-    {
-      Program(path) {
-        const body = path.get('body');
-        if (!body) {
-          return;
-        }
-        const bodyChild = body[0];
-        if (t.isTemplateLiteral(bodyChild.node.expression)) {
-          is = true;
-        }
-      },
-      ConditionalExpression(path) {
-        if (t.isStringLiteral(path.node.consequent) && t.isStringLiteral(path.node.alternate)) {
-          is = true;
-        }
-      },
-      BinaryExpression(path) {
-        if (path.node.operator !== '+') {
-          return;
-        }
-        const nodeLeft = path.node.left;
-        const nodeRight = path.node.right;
-        if (
-          t.isTaggedTemplateExpression(nodeLeft) ||
-          t.isStringLiteral(nodeLeft) ||
-          t.isTemplateLiteral(nodeLeft) ||
-          t.isTaggedTemplateExpression(nodeRight) ||
-          t.isStringLiteral(nodeRight) ||
-          t.isTemplateLiteral(nodeRight)
-        ) {
-          is = true;
-        }
-      }
-    },
-    null
-  );
-  return is;
+  if (t.isBinaryExpression(path.node) && path.node.operator === '+') {
+    const nodeLeft = path.node.left;
+    const nodeRight = path.node.right;
+    if (
+      t.isTaggedTemplateExpression(nodeLeft) ||
+      t.isStringLiteral(nodeLeft) ||
+      t.isTemplateLiteral(nodeLeft) ||
+      t.isTaggedTemplateExpression(nodeRight) ||
+      t.isStringLiteral(nodeRight) ||
+      t.isTemplateLiteral(nodeRight)
+    ) {
+      return true;
+    }
+  }
+  return false;
 }

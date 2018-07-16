@@ -1,6 +1,5 @@
 /* eslint-disable no-underscore-dangle, no-param-reassign */
 import babelTraverse from '@babel/traverse';
-import babelGenerator from '@babel/generator';
 import * as t from '@babel/types';
 import cleanJSXElementLiteralChild from '@babel/types/lib/utils/react/cleanJSXElementLiteralChild';
 import {
@@ -53,34 +52,23 @@ function transformation(oldAst, inputFilePath) {
       }
 
       const expressionPath = path.get('expression');
-      const expression = expressionPath.node;
+      const expressionNode = expressionPath.node;
 
-      if (t.isLogicalExpression(expression, { operator: '&&' })) {
+      if (t.isLogicalExpression(expressionNode, { operator: '&&' })) {
         return;
       }
-      if (t.isLogicalExpression(expression, { operator: '||' })) {
+      if (t.isLogicalExpression(expressionNode, { operator: '||' })) {
         return;
       }
-      if (t.isConditionalExpression(expression)) {
+      if (t.isConditionalExpression(expressionNode)) {
         return;
       }
-
-      const isIterator = isMapIterator(expression);
-
-      if (isIterator) {
+      if (isMapIterator(expressionNode)) {
         return;
       }
 
       const context = getContext(path);
-      const identifiers = getIdentifiersInfo(expressionPath);
-
-      if (t.isIdentifier(expression)) {
-        const interpolationEscaped = createInterpolationEscaped(expression.name, identifiers);
-        addToContext(context, interpolationEscaped);
-        return;
-      }
-      const { code } = babelGenerator(expression);
-      const interpolationEscaped = createInterpolationEscaped(code, identifiers);
+      const interpolationEscaped = createInterpolationEscaped(expressionPath);
       addToContext(context, interpolationEscaped);
     },
     JSXAttribute(path) {
@@ -91,27 +79,16 @@ function transformation(oldAst, inputFilePath) {
         return;
       }
       if (!valueNode) {
-        const attribute = createAttribute({ name, value: true, expression: true });
+        const attribute = createAttribute({ name, value: true, isBoolean: true });
         addToContext(context, attribute, 'attributes');
         return;
       }
       if (t.isStringLiteral(valueNode)) {
-        const attribute = createAttribute({ name, value: valueNode.value });
+        const attribute = createAttribute({ name, value: valueNode.value, isString: true });
         addToContext(context, attribute, 'attributes');
         return;
       }
       const expression = path.get('value.expression');
-      if (t.isJSXExpressionContainer(valueNode) && t.isIdentifier(expression.node)) {
-        const identifiers = getIdentifiersInfo(expression);
-        const attribute = createAttribute({
-          name,
-          value: expression.node.name,
-          expression: true,
-          identifiers
-        });
-        addToContext(context, attribute, 'attributes');
-        return;
-      }
       if (name === 'style') {
         const styles = {};
         expression.node.properties.forEach(prop => {
@@ -119,43 +96,23 @@ function transformation(oldAst, inputFilePath) {
         });
         const stringInlineStyles = inlineStyles(styles);
         if (stringInlineStyles) {
-          const attribute = createAttribute({ name, value: stringInlineStyles });
+          const attribute = createAttribute({ name, value: stringInlineStyles, isString: true });
           addToContext(context, attribute, 'attributes');
         }
         return;
       }
-
-      const generated = babelGenerator(expression.node, { concise: true, sourceMaps: true });
-      const identifiers = getIdentifiersInfo(expression);
-      const fixedIdentifiers = Object.keys(identifiers).reduce((obj, key) => {
-        const keyMappings = generated.rawMappings.filter(keyMapping => keyMapping.name === key);
-        obj[key] = identifiers[key].map((indentifier, i) => {
-          const start = keyMappings[i].generated.column;
-          const end = start + key.length;
-          return { start, end };
-        });
-        return obj;
-      }, {});
-      const attribute = createAttribute({
-        name,
-        value: generated.code,
-        expression: true,
-        identifiers: fixedIdentifiers
-      });
+      const attribute = createAttribute({ name, valuePath: expression });
       addToContext(context, attribute, 'attributes');
     },
     CallExpression(path) {
-      const callee = path.node.callee;
-      const aarguments = path.node.arguments[0];
       const isIterator = isMapIterator(path.node);
       if (isIterator) {
+        const iterablePath = path.get('callee.object');
+        const currentValuePath = path.get('arguments.0.params.0');
+        const indexPath = path.get('arguments.0.params.1');
+        const arrayPath = path.get('arguments.0.params.2');
+        const iteration = createIteration({ iterablePath, currentValuePath, indexPath, arrayPath });
         const context = getContext(path);
-        const { code } = babelGenerator(callee);
-        const iterable = code.replace('.map', '');
-        const currentValue = aarguments.params[0].name;
-        const index = aarguments.params[1] ? aarguments.params[1].name : null;
-        const array = aarguments.params[2] ? aarguments.params[2].name : null;
-        const iteration = createIteration({ iterable, currentValue, index, array });
         addToContext(context, iteration);
         setContext(path, iteration);
       }
@@ -169,21 +126,14 @@ function transformation(oldAst, inputFilePath) {
       }
       const left = path.get('left');
       const context = getContext(path);
-      const identifiers = getIdentifiersInfo(left);
       if (path.node.operator === '&&') {
-        const { code } = babelGenerator(left.node);
-        const condition = createCondition({ test: code, identifiers });
+        const condition = createCondition({ testPath: left });
         addToContext(context, condition);
         setContext(path, condition);
         return;
       }
-      const { code } = babelGenerator(left.node);
-      const interpolationEscaped = createInterpolationEscaped(code, identifiers);
-      const condition = createCondition({
-        test: code,
-        consequent: interpolationEscaped,
-        identifiers
-      });
+      const interpolationEscaped = createInterpolationEscaped(left);
+      const condition = createCondition({ testPath: left, consequent: interpolationEscaped });
       addToContext(context, condition);
       setContext(path, condition);
     },
@@ -194,11 +144,10 @@ function transformation(oldAst, inputFilePath) {
       const testPath = path.get('test');
       const context = getContext(path);
       const ignoreConsequent = t.isNullLiteral(path.node.consequent);
-      const padding = ignoreConsequent ? 2 : 0;
-      const identifiers = getIdentifiersInfo(testPath, padding);
-      const { code } = babelGenerator(testPath.node);
-      const test = ignoreConsequent ? `!(${code})` : code;
-      const condition = createCondition({ test, identifiers });
+      if (ignoreConsequent) {
+        testPath.replaceWith(t.UnaryExpression('!', testPath.node));
+      }
+      const condition = createCondition({ testPath });
       addToContext(context, condition);
       setContext(path, condition);
     },
@@ -288,33 +237,4 @@ function shouldIgnoreAttr(name) {
     return true;
   }
   return false;
-}
-
-function getIdentifiersInfo(path, padding = 0) {
-  const start = path.node.start;
-  const info = {};
-  if (t.isIdentifier(path.node)) {
-    const { name, info: idInfo } = getIdentifierInfo(path.node, start, padding);
-    info[name] = [idInfo];
-    return info;
-  }
-  path.traverse({
-    Identifier({ node }) {
-      const { name, info: idInfo } = getIdentifierInfo(node, start, padding);
-      if (info[name]) {
-        info[name].push(idInfo);
-      } else {
-        info[name] = [idInfo];
-      }
-    }
-  });
-  return info;
-}
-
-function getIdentifierInfo(node, start, padding) {
-  const idStart = node.start - start + padding;
-  const idEnd = node.end - start + padding;
-  const name = node.name;
-  const info = { start: idStart, end: idEnd };
-  return { name, info };
 }

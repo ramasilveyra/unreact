@@ -19,7 +19,7 @@ const Item = ({ name, children }) => <li>{children}</li>;
 const List = ({ list, name, error }) => (
   <Container className="container">
     <Notice name={name} description="is awesome" />
-    <ul>{list.map(item => <Item>{item}</Item>)}</ul>
+    <ul className={undefined}>{list.map(item => <Item>{item}</Item>)}</ul>
     <Button appearence="light" />
     <Input errorMsg="E-mail must be valid." error={error} />
   </Container>

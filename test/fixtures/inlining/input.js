@@ -7,7 +7,10 @@ const Container = ({ children }) => <div>{children}</div>;
 const Item = ({ children }) => <li>{children}</li>;
 const List = ({ list }) => <ul>{list.map(item => <Item>{item}</Item>)}</ul>;
 const Foo = ({ showIcon }) => (
-  <div>{showIcon ? <span className="icon icon-123">Menu</span> : 'Hi!'}</div>
+  <div>
+    {showIcon ? <span className="icon icon-123">Menu</span> : 'Hi!'}
+    <strong>something</strong>
+  </div>
 );
 const Foo2 = ({ showIcon, reallyShowIcon }) => (
   <div>{showIcon && reallyShowIcon ? <span className="icon icon-123">Menu</span> : 'Hi!'}</div>
