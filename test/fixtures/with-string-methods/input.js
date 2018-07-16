@@ -15,6 +15,7 @@ const Foo = ({ name }) => (
       </li>
       <li>Trim + Replace: {name.trim().replace('foo', 'bar')}</li>
       <li>Trim + CharAt: {name.trim().charAt(0)}</li>
+      <li>Trim + Slice: {name.trim().slice(2, 5)}</li>
     </ul>
   </div>
 );

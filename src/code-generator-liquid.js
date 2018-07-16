@@ -224,14 +224,17 @@ function generateScriptlet(value) {
 
 const methodToFilter = {
   join: 'join',
-  toUpperCase: 'capitalize',
+  toUpperCase: 'upcase',
   toLowerCase: 'downcase',
   replace: 'replace',
   trim: 'strip',
   // slice defaults to 1.
   charAt: 'slice',
   // javascript "slice" is different to liquid "slice"
-  substr: 'slice'
+  substr: 'slice',
+
+  // special case, we change the second argument
+  slice: 'slice'
 };
 
 /**
@@ -255,6 +258,9 @@ function generateInterpolationEscaped(expression, replaceLocals, final) {
 
   switch (expression.type) {
     case 'Literal':
+      if (expression.raw.indexOf("'") === 0) {
+        return `"${expression.value}"`;
+      }
       return final ? expression.value : expression.raw;
     case 'Identifier':
       return wrap(replaceLocals[expression.name] || expression.name);
@@ -296,13 +302,24 @@ function generateInterpolationEscaped(expression, replaceLocals, final) {
       //   throw new Error(`Unsupported CallExpression inside another expression ${object}`);
       // }
 
-      const filterName = methodToFilter[expression.callee.property.name];
+      const jsMethod = expression.callee.property.name;
+      const filterName = methodToFilter[jsMethod];
       if (expression.arguments.length === 0) {
         return wrap(`${object} | ${filterName}`);
       }
 
       const args = expression.arguments
-        .map(arg => {
+        .map((arg, index, arr) => {
+          // special case to match javascript slice to liquid slice
+          if (
+            jsMethod === 'slice' &&
+            index === 1 &&
+            arg.type === 'Literal' &&
+            arr[0].type === 'Literal'
+          ) {
+            arg.value -= arr[0].value;
+            arg.raw = arg.value.toString();
+          }
           return generateInterpolationEscaped(arg, replaceLocals, false);
         })
         .join(', ');
@@ -352,6 +369,7 @@ function generateInterpolationEscaped(expression, replaceLocals, final) {
         })
         .join('');
     default:
+      console.dir(expression);
       throw new Error(`unsupported expression ${expression.type}`);
   }
 }
