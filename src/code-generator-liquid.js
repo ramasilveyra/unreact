@@ -13,7 +13,6 @@ import {
   rootName,
   textName
 } from './ast';
-import getBodyChild from './utils/get-body-child';
 
 function codeGeneratorLiquid(
   node,
@@ -163,27 +162,33 @@ function normalizePropertyName(name) {
   }
 }
 
-function generateCondition(test, consequent, alternate, replaceLocals) {
-  const parsed = esprima.parse(test);
+function generateCondition(testExpression, consequent, alternate, replaceLocals) {
+  if (typeof testExpression === 'string') {
+    // console.dir(esprima);
+    const parsed = esprima.parse(testExpression);
+    if (parsed.body && parsed.body.length === 1 && parsed.body[0].type === 'ExpressionStatement') {
+      testExpression = parsed.body[0].expression;
+    } else {
+      throw new Error(`unsupported test expression: ${expression}`);
+    }
+  }
+  // const parsed = esprima.parse(test);
   let block = 'if';
 
   if (
-    parsed.body &&
-    parsed.body.length === 1 &&
-    parsed.body[0].type === 'ExpressionStatement' &&
-    parsed.body[0].expression.type === 'UnaryExpression' &&
-    parsed.body[0].expression.operator === '!' &&
-    parsed.body[0].expression.argument &&
-    parsed.body[0].expression.argument.type === 'Identifier'
+    testExpression.type === 'UnaryExpression' &&
+    testExpression.operator === '!' &&
+    testExpression.argument &&
+    testExpression.argument.type === 'Identifier'
   ) {
-    test = parsed.body[0].expression.argument.name;
+    testExpression = testExpression.argument;
     block = 'unless';
   }
 
-  const testExpression = generateInterpolationEscaped(test, replaceLocals, false);
+  const testCondition = generateInterpolationEscaped(testExpression, replaceLocals, false);
 
   const conditionArray = [
-    generateScriptlet(`${block} ${testExpression}`),
+    generateScriptlet(`${block} ${testCondition}`),
     consequent,
     alternate ? generateScriptlet('else') : null,
     alternate,
@@ -258,7 +263,7 @@ function generateInterpolationEscaped(expression, replaceLocals, final) {
 
   switch (expression.type) {
     case 'Literal':
-      if (expression.raw.indexOf("'") === 0) {
+      if (!final && expression.raw.indexOf("'") === 0) {
         return `"${expression.value}"`;
       }
       return final ? expression.value : expression.raw;
@@ -368,6 +373,14 @@ function generateInterpolationEscaped(expression, replaceLocals, final) {
           )}`;
         })
         .join('');
+    case 'ConditionalExpression':
+      return generateCondition(
+        expression.test,
+        generateInterpolationEscaped(expression.consequent, replaceLocals, true),
+        expression.alternate &&
+          generateInterpolationEscaped(expression.alternate, replaceLocals, true),
+        replaceLocals
+      );
     default:
       console.dir(expression);
       throw new Error(`unsupported expression ${expression.type}`);

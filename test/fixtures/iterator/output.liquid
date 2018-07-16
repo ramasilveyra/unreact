@@ -13,7 +13,7 @@
 
   <ul>
     {% for item in list %}
-      <li>{{ item }} at {{ forloop.index0 }} of {{ list | join: ', ' }}</li>
+      <li>{{ item }} at {{ forloop.index0 }} of {{ list | join: ", " }}</li>
     {% endfor %}
   </ul>
 </div>

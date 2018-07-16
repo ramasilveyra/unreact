@@ -201,11 +201,13 @@ describe('while using unreact.compile()', () => {
     expect(resultLiquid).toBe(outputLiquid);
   });
   it('should convert react components to templaste handle attributes with conditions', async () => {
-    const { input, outputEJS, outputPug } = await getTestCase('attrs-conditional');
+    const { input, outputEJS, outputPug, outputLiquid } = await getTestCase('attrs-conditional');
     const resultEJS = await compile(input, { templateEngine: 'ejs' });
     const resultPug = await compile(input, { templateEngine: 'pug' });
+    const resultLiquid = await compile(input, { templateEngine: 'liquid' });
     expect(resultEJS).toBe(outputEJS);
     expect(resultPug).toBe(outputPug);
+    expect(resultLiquid).toBe(outputLiquid);
   });
   it('should convert react components to ejs and pug and inline others components', async () => {
     const { input, outputEJS, outputPug, outputLiquid } = await getTestCase('inlining');
@@ -235,7 +237,7 @@ describe('while using unreact.compile()', () => {
     expect(resultPug).toBe(outputPug);
     expect(resultLiquid).toBe(outputLiquid);
   });
-  it.only('should properly handle string methods', async () => {
+  it('should properly handle string methods', async () => {
     // .replace(/^\s+$/g, '')
     const removeEmptyLines = v =>
       `${v
