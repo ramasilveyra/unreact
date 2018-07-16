@@ -5,6 +5,7 @@
     <li>Trim: {{ name | strip }}</li>
     <li>Trim + Upper: {{ name | strip | capitalize }}</li>
     <li>Trim + Upper + Lower: {{ name | strip | capitalize | downcase }}</li>
-    <li>Trim + Replace: {{ name | strip | replace: "foo", "bar" }}</li>
+    <li>Trim + Replace: {{ name | strip | replace: 'foo', 'bar' }}</li>
+    <li>Trim + CharAt: {{ name | strip | slice: 0 }}</li>
   </ul>
 </div>

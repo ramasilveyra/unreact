@@ -227,7 +227,11 @@ const methodToFilter = {
   toUpperCase: 'capitalize',
   toLowerCase: 'downcase',
   replace: 'replace',
-  trim: 'strip'
+  trim: 'strip',
+  // slice defaults to 1.
+  charAt: 'slice',
+  // javascript "slice" is different to liquid "slice"
+  substr: 'slice'
 };
 
 /**

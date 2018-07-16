@@ -15,6 +15,7 @@ const Foo = ({ name }) => (
           .toLowerCase()}
       </li>
       <li>Trim + Replace: {name.trim().replace('foo', 'bar')}</li>
+      <li>Trim + CharAt: {name.trim().charAt(0)}</li>
     </ul>
   </div>
 );
