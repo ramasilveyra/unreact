@@ -188,6 +188,9 @@ function transformation(oldAst, inputFilePath) {
       setContext(path, condition);
     },
     ConditionalExpression(path) {
+      if (path.findParent(node => t.isJSXAttribute(node))) {
+        return;
+      }
       const testPath = path.get('test');
       const context = getContext(path);
       const ignoreConsequent = t.isNullLiteral(path.node.consequent);
@@ -200,6 +203,9 @@ function transformation(oldAst, inputFilePath) {
       setContext(path, condition);
     },
     StringLiteral(path) {
+      if (path.findParent(node => t.isJSXAttribute(node))) {
+        return;
+      }
       if (t.isConditionalExpression(path.parent)) {
         const context = getContext(path);
         const text = createText(path.node.value);

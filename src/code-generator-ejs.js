@@ -194,6 +194,11 @@ function isString(code) {
           is = true;
         }
       },
+      ConditionalExpression(path) {
+        if (t.isStringLiteral(path.node.consequent) && t.isStringLiteral(path.node.alternate)) {
+          is = true;
+        }
+      },
       BinaryExpression(path) {
         if (path.node.operator !== '+') {
           return;
