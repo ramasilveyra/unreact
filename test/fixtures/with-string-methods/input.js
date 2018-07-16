@@ -8,8 +8,7 @@ const Foo = ({ name }) => (
       <li>Trim: {name.trim()}</li>
       <li>Trim + Upper: {name.trim().toUpperCase()}</li>
       <li>
-        Trim + Upper + Lower:{' '}
-        {name
+        Trim + Upper + Lower: {name
           .trim()
           .toUpperCase()
           .toLowerCase()}
