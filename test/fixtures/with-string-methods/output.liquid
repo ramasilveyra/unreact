@@ -8,5 +8,6 @@
     <li>Trim + Replace: {{ name | strip | replace: "foo", "bar" }}</li>
     <li>Trim + CharAt: {{ name | strip | slice: 0 }}</li>
     <li>Trim + Slice: {{ name | strip | slice: 2, 3 }}</li>
+    <li>Poor man capitalize: {{ name | slice: 0 | upcase }}{{ name | slice: 1, name.size | downcase }}</li>
   </ul>
 </div>

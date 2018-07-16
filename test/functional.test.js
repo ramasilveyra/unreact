@@ -245,13 +245,8 @@ describe('while using unreact.compile()', () => {
         .filter(l => l.trim() !== '')
         .join('\n')}\n`;
     const { input, outputLiquid } = await getTestCase('with-string-methods');
-    // const { input, outputEJS, outputPug, outputLiquid } = await getTestCase('with-string-methods');
-    // const resultEJS = await compile(input, { templateEngine: 'ejs' });
-    // const resultPug = await compile(input, { templateEngine: 'pug' });
     const resultLiquid = await compile(input, { templateEngine: 'liquid' });
-    // expect(removeEmptyLines(resultEJS)).toBe(outputEJS);
     expect(removeEmptyLines(resultLiquid)).toBe(outputLiquid);
-    // expect(resultPug).toBe(outputPug);
   });
 });
 

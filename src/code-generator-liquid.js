@@ -197,7 +197,7 @@ function generateCondition(testExpression, consequent, alternate, replaceLocals)
   return conditionArray.join('');
 }
 
-function generateIteration({ iterable, currentValue, index, array, body }) {
+function generateIteration({ iterable, currentValue, body }) {
   // const params = [currentValue, index, array].filter(Boolean).join(', ');
   const iterableParsed = esprima.parse(iterable);
   let initializator = '';
@@ -242,6 +242,10 @@ const methodToFilter = {
   slice: 'slice'
 };
 
+const propertyTranslation = {
+  length: 'size'
+};
+
 /**
  *
  * @param {String|esprima.expression} expression the expression to interpolate
@@ -269,6 +273,14 @@ function generateInterpolationEscaped(expression, replaceLocals, final) {
       return final ? expression.value : expression.raw;
     case 'Identifier':
       return wrap(replaceLocals[expression.name] || expression.name);
+    case 'MemberExpression': {
+      const left = generateInterpolationEscaped(expression.object, replaceLocals, false);
+      const property =
+        (expression.property.type === 'Literal' && propertyTranslation[expression.property.name]) ||
+        expression.property;
+      const right = generateInterpolationEscaped(property, {}, false);
+      return wrap(`${left}.${right}`);
+    }
     case 'BinaryExpression': {
       const finalLeafs = expression.operator !== '-';
       const left = generateInterpolationEscaped(expression.left, replaceLocals, finalLeafs);
@@ -313,20 +325,26 @@ function generateInterpolationEscaped(expression, replaceLocals, final) {
         return wrap(`${object} | ${filterName}`);
       }
 
+      if (jsMethod === 'slice') {
+        const args = expression.arguments;
+        if (args.length === 2 && args[0].type === 'Literal' && args[1].type === 'Literal') {
+          args[1].value -= args[0].value;
+          args[1].raw = args[1].value.toString();
+        } else if (
+          args.length === 1 &&
+          args[0].type === 'Literal' &&
+          expression.callee.object.type === 'Identifier'
+        ) {
+          args.push(`${object}.size`);
+        } else {
+          throw new Error(
+            'Unsupported case of "slice" method. Note: slice is different in liquid than in js'
+          );
+        }
+      }
+
       const args = expression.arguments
-        .map((arg, index, arr) => {
-          // special case to match javascript slice to liquid slice
-          if (
-            jsMethod === 'slice' &&
-            index === 1 &&
-            arg.type === 'Literal' &&
-            arr[0].type === 'Literal'
-          ) {
-            arg.value -= arr[0].value;
-            arg.raw = arg.value.toString();
-          }
-          return generateInterpolationEscaped(arg, replaceLocals, false);
-        })
+        .map(arg => generateInterpolationEscaped(arg, replaceLocals, false))
         .join(', ');
 
       return wrap(`${object} | ${filterName}: ${args}`);
