@@ -326,21 +326,7 @@ function generateInterpolationEscaped(expression, replaceLocals, final) {
       }
 
       if (jsMethod === 'slice') {
-        const args = expression.arguments;
-        if (args.length === 2 && args[0].type === 'Literal' && args[1].type === 'Literal') {
-          args[1].value -= args[0].value;
-          args[1].raw = args[1].value.toString();
-        } else if (
-          args.length === 1 &&
-          args[0].type === 'Literal' &&
-          expression.callee.object.type === 'Identifier'
-        ) {
-          args.push(`${object}.size`);
-        } else {
-          throw new Error(
-            'Unsupported case of "slice" method. Note: slice is different in liquid than in js'
-          );
-        }
+        formatSliceArguments(expression, object);
       }
 
       const args = expression.arguments
@@ -400,8 +386,25 @@ function generateInterpolationEscaped(expression, replaceLocals, final) {
         replaceLocals
       );
     default:
-      console.dir(expression);
       throw new Error(`unsupported expression ${expression.type}`);
+  }
+}
+
+function formatSliceArguments(expression, object) {
+  const args = expression.arguments;
+  if (args.length === 2 && args[0].type === 'Literal' && args[1].type === 'Literal') {
+    args[1].value -= args[0].value;
+    args[1].raw = args[1].value.toString();
+  } else if (
+    args.length === 1 &&
+    args[0].type === 'Literal' &&
+    expression.callee.object.type === 'Identifier'
+  ) {
+    args.push(`${object}.size`);
+  } else {
+    throw new Error(
+      'Unsupported case of "slice" method. Note: slice is different in liquid than in js'
+    );
   }
 }
 
