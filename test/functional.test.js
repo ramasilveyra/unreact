@@ -1,7 +1,7 @@
 import { compile, compileDir, compileFile } from '../src/index';
 import { getFixture, getFixturePath, getTestCase } from './utils';
 
-describe.only('while using unreact.compile()', () => {
+describe('while using unreact.compile()', () => {
   it('should convert react components of one tag to ejs and pug', async () => {
     const { input, outputEJS, outputPug, outputLiquid } = await getTestCase('one-tag');
     const resultEJS = await compile(input, { templateEngine: 'ejs' });
@@ -234,6 +234,21 @@ describe.only('while using unreact.compile()', () => {
     expect(resultEJS).toBe(outputEJS);
     expect(resultPug).toBe(outputPug);
     expect(resultLiquid).toBe(outputLiquid);
+  });
+  it('should properly handle string methods', async () => {
+    // .replace(/^\s+$/g, '')
+    const removeEmptyLines = v =>
+      `${v
+        .split('\n')
+        .filter(l => l.trim() !== '')
+        .join('\n')}\n`;
+    const { input, outputEJS, outputPug, outputLiquid } = await getTestCase('with-string-methods');
+    const resultEJS = await compile(input, { templateEngine: 'ejs' });
+    const resultLiquid = await compile(input, { templateEngine: 'liquid' });
+    const resultPug = await compile(input, { templateEngine: 'pug' });
+    expect(removeEmptyLines(resultEJS)).toBe(outputEJS);
+    expect(removeEmptyLines(resultLiquid)).toBe(outputLiquid);
+    expect(resultPug).toBe(outputPug);
   });
 });
 

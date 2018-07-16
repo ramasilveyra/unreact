@@ -221,6 +221,15 @@ function generateIteration({ iterable, currentValue, index, array, body }) {
 function generateScriptlet(value) {
   return `{% ${value} %}`;
 }
+
+const methodToFilter = {
+  join: 'join',
+  toUpperCase: 'capitalize',
+  toLowerCase: 'downcase',
+  replace: 'replace',
+  trim: 'strip'
+};
+
 /**
  *
  * @param {String|esprima.expression} expression the expression to interpolate
@@ -229,6 +238,7 @@ function generateScriptlet(value) {
  */
 function generateInterpolationEscaped(expression, replaceLocals, final) {
   if (typeof expression === 'string') {
+    // console.dir(esprima);
     const parsed = esprima.parse(expression);
     if (parsed.body && parsed.body.length === 1 && parsed.body[0].type === 'ExpressionStatement') {
       expression = parsed.body[0].expression;
@@ -267,16 +277,33 @@ function generateInterpolationEscaped(expression, replaceLocals, final) {
     case 'CallExpression': {
       if (
         expression.callee.type !== 'MemberExpression' ||
-        expression.callee.property.name !== 'join'
+        !expression.callee.property ||
+        !methodToFilter[expression.callee.property.name]
       ) {
-        throw new Error(`Unsupported CallExpression "${expression.callee.name}"`);
+        const shown =
+          (expression.callee.property && expression.callee.property.name) || expression.callee.name;
+        throw new Error(`Unsupported CallExpression "${shown}"`);
       }
-      const arrayEl = generateInterpolationEscaped(expression.callee.object, replaceLocals, false);
-      const arg = generateInterpolationEscaped(expression.arguments[0], replaceLocals, false);
-      if (!final) {
-        throw new Error(`Unsupported CallExpression inside another expression ${arrayEl}`);
+
+      const object = generateInterpolationEscaped(expression.callee.object, replaceLocals, false);
+
+      // re-consider this
+      // if (!final) {
+      //   throw new Error(`Unsupported CallExpression inside another expression ${object}`);
+      // }
+
+      const filterName = methodToFilter[expression.callee.property.name];
+      if (expression.arguments.length === 0) {
+        return wrap(`${object} | ${filterName}`);
       }
-      return wrap(`${arrayEl} | join: ${arg}`);
+
+      const args = expression.arguments
+        .map(arg => {
+          return generateInterpolationEscaped(arg, replaceLocals, false);
+        })
+        .join(', ');
+
+      return wrap(`${object} | ${filterName}: ${args}`);
     }
     case 'LogicalExpression': {
       let operator;

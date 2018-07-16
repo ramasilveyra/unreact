@@ -1,0 +1,10 @@
+<div>
+  <ul>
+    <li>Lower case: {{ name | downcase }}</li>
+    <li>Upper case: {{ name | capitalize }}</li>
+    <li>Trim: {{ name | strip }}</li>
+    <li>Trim + Upper: {{ name | strip | capitalize }}</li>
+    <li>Trim + Upper + Lower: {{ name | strip | capitalize | downcase }}</li>
+    <li>Trim + Replace: {{ name | strip | replace: "foo", "bar" }}</li>
+  </ul>
+</div>
