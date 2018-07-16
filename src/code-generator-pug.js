@@ -1,5 +1,6 @@
 /* eslint-disable no-param-reassign */
 import htmlTagsVoids from 'html-tags/void';
+import babelGenerator from '@babel/generator';
 import {
   attributeName,
   conditionName,
@@ -55,19 +56,25 @@ function codeGeneratorPug(
       }
       return node.value;
     case attributeName:
-      return generateProperty(node.name, node.value, node.expression);
+      return generateProperty({
+        name: node.name,
+        isBoolean: node.isBoolean,
+        isString: node.isString,
+        value: node.value,
+        valuePath: node.valuePath
+      });
     case interpolationEscapedName:
       if (previousSibling && [elementName, conditionName].includes(previousSibling.type)) {
-        return indent(`| ${generateInterpolationEscaped(node.value)}`, {
+        return indent(`| ${generateInterpolationEscaped(node.valuePath)}`, {
           initialIndentLevel,
           indentLevel
         });
       }
-      return generateInterpolationEscaped(node.value);
+      return generateInterpolationEscaped(node.valuePath);
     case conditionName:
       return indent(
         generateCondition(
-          node.test,
+          node.testPath,
           codeGeneratorPug(node.consequent, { initialIndentLevel, indentLevel: indentLevel + 1 }),
           node.alternate &&
             codeGeneratorPug(node.alternate, { initialIndentLevel, indentLevel: indentLevel + 1 }),
@@ -82,10 +89,10 @@ function codeGeneratorPug(
     case iterationName:
       return indent(
         generateIteration({
-          iterable: node.iterable,
-          currentValue: node.currentValue,
-          index: node.index,
-          array: node.array,
+          iterablePath: node.iterablePath,
+          currentValuePath: node.currentValuePath,
+          indexPath: node.indexPath,
+          arrayPath: node.arrayPath,
           body: codeGeneratorPug(node.body, { initialIndentLevel, indentLevel: indentLevel + 1 }),
           initialIndentLevel,
           indentLevel
@@ -112,27 +119,28 @@ function generateTag(tagName, children, properties) {
   return tag;
 }
 
-function generateProperty(name, value, expression) {
+function generateProperty({ name, isBoolean, isString, value, valuePath }) {
   const normalizedName = normalizePropertyName(name);
 
-  // NOTE: `value === true` is to accept boolean attributes, e.g.: `<input checked />`.
-  if (value === true) {
+  if (isBoolean) {
     return normalizedName;
   }
 
-  if (expression) {
-    return `${normalizedName}=${value}`;
+  if (isString) {
+    return `${normalizedName}="${value}"`;
   }
 
-  return `${normalizedName}="${value}"`;
+  const generatedValue = babelGenerator(valuePath.node, { concise: true });
+  return `${normalizedName}=${generatedValue.code}`;
 }
 
-function generateCondition(test, consequent, alternate, initialIndentLevel, indentLevel) {
+function generateCondition(testPath, consequent, alternate, initialIndentLevel, indentLevel) {
+  const generatedValue = babelGenerator(testPath.node, { concise: true });
   const newConsequent =
     consequent[0] === '\n' ? consequent : indent(consequent, { initialIndentLevel, indentLevel });
   const alternateOrNull = stuff => (alternate ? stuff() : null);
   const conditionArray = [
-    `if ${test}`,
+    `if ${generatedValue.code}`,
     newConsequent,
     alternateOrNull(() => indent('else', { initialIndentLevel, indentLevel: indentLevel - 1 })),
     alternateOrNull(
@@ -144,19 +152,25 @@ function generateCondition(test, consequent, alternate, initialIndentLevel, inde
 }
 
 function generateIteration({
-  iterable,
-  currentValue,
-  index,
-  array,
+  iterablePath,
+  currentValuePath,
+  indexPath,
+  arrayPath,
   body,
   initialIndentLevel,
   indentLevel
 }) {
-  const params = [currentValue, index].filter(Boolean).join(', ');
+  const iterableCode = babelGenerator(iterablePath.node, { concise: true }).code;
+  const currentValueCode = currentValuePath
+    ? babelGenerator(currentValuePath.node, { concise: true }).code
+    : null;
+  const indexCode = indexPath ? babelGenerator(indexPath.node, { concise: true }).code : null;
+  const arrayCode = arrayPath ? babelGenerator(arrayPath.node, { concise: true }).code : null;
+  const params = [currentValueCode, indexCode].filter(Boolean).join(', ');
   const iterationArray = [
-    `each ${params} in ${iterable}`,
-    array
-      ? indent(generateScriptlet(`const ${array} = ${iterable};`), {
+    `each ${params} in ${iterableCode}`,
+    arrayCode
+      ? indent(generateScriptlet(`const ${arrayCode} = ${iterableCode};`), {
           initialIndentLevel,
           indentLevel: indentLevel + 1
         })
@@ -170,8 +184,9 @@ function generateScriptlet(value) {
   return `- ${value}`;
 }
 
-function generateInterpolationEscaped(value) {
-  return `#{${value}}`;
+function generateInterpolationEscaped(valuePath) {
+  const generatedValue = babelGenerator(valuePath.node, { concise: true });
+  return `#{${generatedValue.code}}`;
 }
 
 function indent(str, { initialIndentLevel, indentLevel }) {

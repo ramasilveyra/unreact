@@ -1,103 +1,122 @@
-/* eslint-disable no-param-reassign */
-import MagicString from 'magic-string';
-import makeUndefined from './make-undefined';
-import { textName } from '../ast';
+/* eslint-disable no-param-reassign, no-underscore-dangle */
+import * as t from '@babel/types';
+import babelTraverse from '@babel/traverse';
+import babelGenerator from '@babel/generator';
+import { iterationName } from '../ast';
+import parser from '../parser';
 
-function inlining(props) {
+function createInliningVisitor(props) {
   return {
     Attribute: {
-      exit(node) {
-        if (!node.identifiers) {
-          return;
-        }
-        const value = new MagicString(node.value);
-        const propsToChange = props.filter(prop => prop.value && node.identifiers[prop.name]);
-        const propsToNotChange = props.filter(prop => !prop.value && node.identifiers[prop.name]);
-        propsToNotChange.forEach(prop => makeUndefined(node, prop, value));
-        propsToChange.forEach(prop => {
-          const propIDs = node.identifiers[prop.name];
-          const propValue = prop.value.value;
-          const canMakeText =
-            Object.keys(node.identifiers).length === 1 &&
-            propIDs.length === 1 &&
-            propIDs[0].start === 0 &&
-            propIDs[0].end === node.value.length;
-          propIDs.forEach(propID => {
-            const isText = prop.value.expression === false;
-            const content = !canMakeText && isText ? `'${String(propValue)}'` : String(propValue);
-            value.overwrite(propID.start, propID.end, content);
-            if (canMakeText && isText) {
-              // Make attr text;
-              node.expression = false;
-            }
-          });
-        });
-        node.value = value.toString();
+      exit(node, parent) {
+        inlineNodeVisitor(node, parent, props, 'valuePath');
       }
     },
     InterpolationEscaped: {
       exit(node, parent) {
-        const value = new MagicString(node.value);
-        const propsToChange = props.filter(prop => prop.value && node.identifiers[prop.name]);
-        const propsToNotChange = props.filter(prop => !prop.value && node.identifiers[prop.name]);
-        propsToNotChange.forEach(prop => makeUndefined(node, prop, value));
-        propsToChange.forEach(prop => {
-          if (prop.name === 'children') {
-            const position = parent.children.findIndex(child => child.value === 'children');
-            parent.children = [
-              ...parent.children.slice(0, position),
-              ...prop.value,
-              ...parent.children.slice(position + 1)
-            ];
-            return;
-          }
-          const propIDs = node.identifiers[prop.name];
-          const propValue = prop.value.value;
-          const canMakeText =
-            Object.keys(node.identifiers).length === 1 &&
-            propIDs.length === 1 &&
-            propIDs[0].start === 0 &&
-            propIDs[0].end === node.value.length;
-          propIDs.forEach(propID => {
-            const isText = prop.value.expression === false;
-            const content = !canMakeText && isText ? `'${String(propValue)}'` : String(propValue);
-            value.overwrite(propID.start, propID.end, content);
-            if (canMakeText && isText) {
-              // Convert to Text.
-              node.type = textName;
-              delete node.identifiers;
-            }
-          });
-          node.value = value.toString();
-        });
+        inlineNodeVisitor(node, parent, props, 'valuePath');
       }
     },
     Iteration: {
-      exit(node) {
-        const propToInline = props.find(prop => prop.name === node.iterable);
-        if (propToInline && propToInline.value && propToInline.value.expression) {
-          node.iterable = propToInline.value.value;
-        }
+      exit(node, parent) {
+        inlineNodeVisitor(node, parent, props, 'iterablePath');
       }
     },
     Condition: {
-      enter(node) {
-        const test = new MagicString(node.test);
-        const propsToChange = props.filter(prop => prop.value && node.identifiers[prop.name]);
-        const propsToNotChange = props.filter(prop => !prop.value && node.identifiers[prop.name]);
-        propsToNotChange.forEach(prop => makeUndefined(node, prop, test, 'test'));
-        propsToChange.forEach(prop => {
-          const propIDs = node.identifiers[prop.name];
-          const propValue = prop.value.value;
-          propIDs.forEach(propID => {
-            const newValue = prop.value.expression === false ? `'${propValue}'` : String(propValue);
-            test.overwrite(propID.start, propID.end, newValue);
-          });
-          node.test = test.toString();
-        });
+      enter(node, parent) {
+        inlineNodeVisitor(node, parent, props, 'testPath');
       }
     }
   };
 }
 
-export default inlining;
+export default createInliningVisitor;
+
+function inlineNodeVisitor(node, parent, props, key) {
+  if (!node[key]) {
+    return;
+  }
+  node[key] = clonePath(node[key].node);
+  if (t.isIdentifier(node[key].node) && !t.isMemberExpression(node[key].parent)) {
+    inline(props, node[key], parent);
+    return;
+  }
+  node[key].traverse({
+    Identifier(path) {
+      if (t.isMemberExpression(path.parent)) {
+        return;
+      }
+      inline(props, path, parent);
+    }
+  });
+}
+
+function inline(props, path, parent) {
+  const iteration = findParent(parent, node => node.type === iterationName);
+  const matchedProp = props.find(prop => prop.name === path.node.name);
+  if (iteration && iteration.currentValuePath.node.name === path.node.name) {
+    return;
+  }
+  if (!matchedProp || !matchedProp.value) {
+    path.node.name = 'undefined';
+    return;
+  }
+  if (matchedProp.value.isBoolean) {
+    path.replaceWith(t.BooleanLiteral(true));
+    return;
+  }
+  if (matchedProp.value.isString) {
+    path.replaceWith(t.stringLiteral(matchedProp.value.value));
+    return;
+  }
+  if (matchedProp.name === 'children') {
+    const position = parent.children.findIndex(child => {
+      if (child.valuePath) {
+        return t.isIdentifier(child.valuePath.node, { name: 'children' });
+      }
+      return false;
+    });
+    parent.children = [
+      ...parent.children.slice(0, position),
+      ...matchedProp.value,
+      ...parent.children.slice(position + 1)
+    ];
+    return;
+  }
+  const matchedPropNode = matchedProp.value.valuePath.node;
+  if (t.isIdentifier(matchedPropNode)) {
+    path.node.name = matchedPropNode.name;
+    return;
+  }
+  path.replaceWith(matchedPropNode);
+}
+
+function findParent(node, condition) {
+  let target = node;
+  while (target._parent) {
+    if (condition(target)) {
+      return target;
+    }
+    target = target._parent;
+  }
+  return null;
+}
+
+function clonePath(node) {
+  const code = babelGenerator(node).code;
+  const ast = parser(code);
+  let newPath = null;
+  babelTraverse(
+    ast,
+    {
+      Program(path) {
+        newPath = path.get('body.0');
+        if (t.isExpressionStatement(newPath.node)) {
+          newPath = newPath.get('expression');
+        }
+      }
+    },
+    null
+  );
+  return newPath;
+}

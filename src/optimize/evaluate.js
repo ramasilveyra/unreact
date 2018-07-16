@@ -1,11 +1,5 @@
-import getBodyChild from '../utils/get-body-child';
-
-function evaluate(code) {
-  const bodyChild = getBodyChild(code);
-  if (!bodyChild) {
-    return null;
-  }
-  const evaluates = bodyChild.evaluate();
+function evaluate(path) {
+  const evaluates = path.evaluate();
   return evaluates;
 }
 

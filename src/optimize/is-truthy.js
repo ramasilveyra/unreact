@@ -1,11 +1,5 @@
-import getBodyChild from '../utils/get-body-child';
-
-function isTruthy(code) {
-  const bodyChild = getBodyChild(code);
-  if (!bodyChild) {
-    return null;
-  }
-  const evaluates = bodyChild.evaluateTruthy();
+function isTruthy(path) {
+  const evaluates = path.evaluateTruthy();
   return evaluates;
 }
 

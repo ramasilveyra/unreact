@@ -23,12 +23,19 @@ export const createText = value => ({
 
 // HTML attributes.
 export const attributeName = 'Attribute';
-export const createAttribute = ({ name, value, expression = false, identifiers }) => ({
+export const createAttribute = ({
+  name,
+  value,
+  valuePath,
+  isBoolean = false,
+  isString = false
+}) => ({
   type: attributeName,
   name,
   value,
-  expression,
-  identifiers
+  valuePath,
+  isBoolean,
+  isString
 });
 
 // Template engine syntax for inline JavaScript.
@@ -40,10 +47,9 @@ export const createAttribute = ({ name, value, expression = false, identifiers }
 
 // Template engine syntax for escaped interpolation.
 export const interpolationEscapedName = 'InterpolationEscaped';
-export const createInterpolationEscaped = (value, identifiers) => ({
+export const createInterpolationEscaped = valuePath => ({
   type: interpolationEscapedName,
-  value,
-  identifiers
+  valuePath
 });
 
 // Template engine syntax for unescaped interpolation.
@@ -55,22 +61,27 @@ export const createInterpolationEscaped = (value, identifiers) => ({
 
 // Template engine syntax for condition.
 export const conditionName = 'Condition';
-export const createCondition = ({ test, consequent, alternate = null, identifiers }) => ({
+export const createCondition = ({ testPath, consequent, alternate = null }) => ({
   type: conditionName,
-  test,
+  testPath,
   consequent,
-  alternate,
-  identifiers
+  alternate
 });
 
 // Template engine syntax for iteration.
 export const iterationName = 'Iteration';
-export const createIteration = ({ iterable, currentValue, index, array, body = null }) => ({
+export const createIteration = ({
+  iterablePath,
+  currentValuePath,
+  indexPath,
+  arrayPath,
+  body = null
+}) => ({
   type: iterationName,
-  iterable,
-  currentValue,
-  index,
-  array,
+  iterablePath,
+  currentValuePath,
+  indexPath,
+  arrayPath,
   body
 });
 
