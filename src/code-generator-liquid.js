@@ -349,7 +349,11 @@ function generateInterpolationEscaped(expression, replaceLocals, final) {
       }
       // liquid does not support parenthesis for operator precedence.
       // something like a && (b || c) needs to be expressed in nested ifs.
-      if (expression.left.type !== 'Identifier' || expression.right.type !== 'Identifier') {
+      const supportedTypes = ['Identifier', 'Literal'];
+      if (
+        !supportedTypes.includes(expression.left.type) ||
+        !supportedTypes.includes(expression.right.type)
+      ) {
         throw new Error(
           `unsupported logic operation between ${expression.left.type} and ${expression.right.type}`
         );
