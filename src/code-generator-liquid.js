@@ -1,8 +1,7 @@
 /* eslint-disable no-param-reassign */
 import htmlTagsVoids from 'html-tags/void';
-import * as esprima from 'esprima';
+import * as t from '@babel/types';
 import isBooleanAttr from './utils/is-boolean-attr';
-
 import {
   attributeName,
   conditionName,
@@ -13,6 +12,7 @@ import {
   rootName,
   textName
 } from './ast';
+import normalizePropertyName from './utils/normalize-property-name';
 
 function codeGeneratorLiquid(
   node,
@@ -62,13 +62,20 @@ function codeGeneratorLiquid(
     case textName:
       return node.value;
     case attributeName:
-      return generateProperty(node.name, node.value, node.expression, replaceLocals);
+      return generateProperty({
+        name: node.name,
+        isBoolean: node.isBoolean,
+        isString: node.isString,
+        value: node.value,
+        valuePath: node.valuePath,
+        replaceLocals
+      });
     case interpolationEscapedName:
-      return generateInterpolationEscaped(node.value, replaceLocals, true);
+      return generateInterpolationEscaped(node.valuePath, replaceLocals, true);
     case conditionName:
       return indent(
         generateCondition(
-          node.test,
+          node.testPath,
           codeGeneratorLiquid(node.consequent, {
             initialIndentLevel,
             indentLevel: indentLevel + 1,
@@ -90,14 +97,15 @@ function codeGeneratorLiquid(
     case iterationName:
       return indent(
         generateIteration({
-          iterable: node.iterable,
-          currentValue: node.currentValue,
+          iterablePath: node.iterablePath,
+          currentValuePath: node.currentValuePath,
           body: codeGeneratorLiquid(node.body, {
             initialIndentLevel,
             indentLevel: indentLevel + 1,
             replaceLocals: {
-              [node.index]: 'forloop.index0',
-              [node.array]: node.iterable
+              [node.indexPath && node.indexPath.node.name]: 'forloop.index0',
+              [node.arrayPath && node.arrayPath.node.name]:
+                node.iterablePath && node.iterablePath.node.name
             }
           })
         }),
@@ -125,67 +133,49 @@ function generateTag(tagName, children, properties) {
   return tag;
 }
 
-function generateProperty(name, value, expression, replaceLocals) {
+function generateProperty({ name, isBoolean, isString, value, valuePath, replaceLocals }) {
   const normalizedName = normalizePropertyName(name);
   const startPropertyBeginning = ` ${normalizedName}`;
 
-  if (value === true) {
+  if (isBoolean) {
     return startPropertyBeginning;
   }
 
   // NOTE: `value === true` is to accept boolean attributes, e.g.: `<input checked />`.
-  if (!expression) {
+  if (isString) {
     return `${startPropertyBeginning}="${value}"`;
   }
 
-  const isBoolean = isBooleanAttr(name);
+  const isBoolean2 = isBooleanAttr(name);
   // console.log('isBoolean attr', name, isBoolean);
-  if (isBoolean) {
+  if (isBoolean2) {
     // console.dir(value);
     const condition = generateCondition(value, normalizedName, undefined, replaceLocals);
     return ` ${condition}`;
   }
 
-  return `${startPropertyBeginning}="${generateInterpolationEscaped(value, replaceLocals, true)}"`;
+  return `${startPropertyBeginning}="${generateInterpolationEscaped(
+    valuePath,
+    replaceLocals,
+    true
+  )}"`;
 }
 
-function normalizePropertyName(name) {
-  switch (name) {
-    case 'className':
-      return 'class';
-    case 'htmlFor':
-      return 'for';
-    case 'tabIndex':
-      return 'tabindex';
-    default:
-      return name;
-  }
-}
-
-function generateCondition(testExpression, consequent, alternate, replaceLocals) {
-  if (typeof testExpression === 'string') {
-    // console.dir(esprima);
-    const parsed = esprima.parse(testExpression);
-    if (parsed.body && parsed.body.length === 1 && parsed.body[0].type === 'ExpressionStatement') {
-      testExpression = parsed.body[0].expression;
-    } else {
-      throw new Error(`unsupported test expression: ${expression}`);
-    }
-  }
-  // const parsed = esprima.parse(test);
+function generateCondition(path, consequent, alternate, replaceLocals) {
+  let node = path.node;
   let block = 'if';
 
   if (
-    testExpression.type === 'UnaryExpression' &&
-    testExpression.operator === '!' &&
-    testExpression.argument &&
-    testExpression.argument.type === 'Identifier'
+    node.type === 'UnaryExpression' &&
+    node.operator === '!' &&
+    node.argument &&
+    node.argument.type === 'Identifier'
   ) {
-    testExpression = testExpression.argument;
+    node = node.argument;
     block = 'unless';
   }
 
-  const testCondition = generateInterpolationEscaped(testExpression, replaceLocals, false);
+  const testCondition = generateInterpolationEscaped(path, replaceLocals, false);
 
   const conditionArray = [
     generateScriptlet(`${block} ${testCondition}`),
@@ -197,26 +187,24 @@ function generateCondition(testExpression, consequent, alternate, replaceLocals)
   return conditionArray.join('');
 }
 
-function generateIteration({ iterable, currentValue, body }) {
+function generateIteration({ iterablePath, currentValuePath, body }) {
   // const params = [currentValue, index, array].filter(Boolean).join(', ');
-  const iterableParsed = esprima.parse(iterable);
+  const iterableNode = iterablePath.node;
   let initializator = '';
+  let iterable = iterablePath.node.name;
 
   if (
-    iterableParsed.body &&
-    iterableParsed.body[0] &&
-    iterableParsed.body[0].type === 'ExpressionStatement' &&
-    iterableParsed.body[0].expression.type === 'ArrayExpression' &&
-    iterableParsed.body[0].expression.elements.every(e => e.type === 'Literal')
+    iterableNode.type === 'ArrayExpression' &&
+    iterableNode.elements.every(e => e.type === 'StringLiteral')
   ) {
-    const joinedValues = iterableParsed.body[0].expression.elements.map(e => e.value).join('|');
+    const joinedValues = iterableNode.elements.map(e => e.value).join('|');
     initializator = generateScriptlet(`assign iterator = "${joinedValues}" | split: '|'`);
     iterable = 'iterator';
   }
 
   const iterationArray = [
     initializator,
-    generateScriptlet(`for ${currentValue} in ${iterable}`),
+    generateScriptlet(`for ${currentValuePath.node.name} in ${iterable}`),
     body,
     generateScriptlet('endfor')
   ].filter(Boolean);
@@ -252,45 +240,40 @@ const propertyTranslation = {
  * @param {Object} replaceLocals A key-value map of variables to replace name. Used in the for-each case.
  * @param {boolean} final indicates if the expression needs to be wrapped
  */
-function generateInterpolationEscaped(expression, replaceLocals, final) {
-  if (typeof expression === 'string') {
-    // console.dir(esprima);
-    const parsed = esprima.parse(expression);
-    if (parsed.body && parsed.body.length === 1 && parsed.body[0].type === 'ExpressionStatement') {
-      expression = parsed.body[0].expression;
-    } else {
-      throw new Error(`unsupported expression: ${expression}`);
-    }
-  }
-
+function generateInterpolationEscaped(path, replaceLocals, final) {
+  const node = path.node;
   const wrap = v => (final ? `{{ ${v} }}` : v);
 
-  switch (expression.type) {
+  switch (node.type) {
     case 'Literal':
-      if (!final && expression.raw.indexOf("'") === 0) {
-        return `"${expression.value}"`;
+    case 'StringLiteral':
+    case 'NumericLiteral':
+      if (!final && typeof node.value === 'string') {
+        return `"${node.value}"`;
       }
-      return final ? expression.value : expression.raw;
+      return node.value;
+    case 'UnaryExpression':
+      return generateInterpolationEscaped(path.get('argument'), replaceLocals, false);
     case 'Identifier':
-      return wrap(replaceLocals[expression.name] || expression.name);
+      return wrap(replaceLocals[node.name] || node.name);
     case 'MemberExpression': {
-      const left = generateInterpolationEscaped(expression.object, replaceLocals, false);
+      const left = generateInterpolationEscaped(node.object, replaceLocals, false);
       const property =
-        (expression.property.type === 'Literal' && propertyTranslation[expression.property.name]) ||
-        expression.property;
+        (node.property.type === 'Literal' && propertyTranslation[node.property.name]) ||
+        node.property;
       const right = generateInterpolationEscaped(property, {}, false);
       return wrap(`${left}.${right}`);
     }
     case 'BinaryExpression': {
-      const finalLeafs = expression.operator !== '-';
-      const left = generateInterpolationEscaped(expression.left, replaceLocals, finalLeafs);
-      const right = generateInterpolationEscaped(expression.right, replaceLocals, finalLeafs);
+      const finalLeafs = node.operator !== '-';
+      const left = generateInterpolationEscaped(path.get('left'), replaceLocals, finalLeafs);
+      const right = generateInterpolationEscaped(path.get('right'), replaceLocals, finalLeafs);
       if (!final) {
         throw new Error(
-          `Unsupported BinaryExpression placed inside another expression between ${left} and ${right}`
+          `Unsupported BinaryExpression placed inside another node between ${left} and ${right}`
         );
       }
-      switch (expression.operator) {
+      switch (node.operator) {
         case '+': {
           return `${left}${right}`;
         }
@@ -298,46 +281,50 @@ function generateInterpolationEscaped(expression, replaceLocals, final) {
           return wrap(`${left} | minus: ${right}`);
         }
         default:
-          throw new Error(`Unsupported binary expression ${expression.operator}`);
+          throw new Error(`Unsupported binary expression ${node.operator}`);
       }
     }
     case 'CallExpression': {
       if (
-        expression.callee.type !== 'MemberExpression' ||
-        !expression.callee.property ||
-        !methodToFilter[expression.callee.property.name]
+        node.callee.type !== 'MemberExpression' ||
+        !node.callee.property ||
+        !methodToFilter[node.callee.property.name]
       ) {
-        const shown =
-          (expression.callee.property && expression.callee.property.name) || expression.callee.name;
+        const shown = (node.callee.property && node.callee.property.name) || node.callee.name;
         throw new Error(`Unsupported CallExpression "${shown}"`);
       }
 
-      const object = generateInterpolationEscaped(expression.callee.object, replaceLocals, false);
+      const object = generateInterpolationEscaped(path.get('callee.object'), replaceLocals, false);
 
       // re-consider this
       // if (!final) {
       //   throw new Error(`Unsupported CallExpression inside another expression ${object}`);
       // }
 
-      const jsMethod = expression.callee.property.name;
+      const jsMethod = node.callee.property.name;
       const filterName = methodToFilter[jsMethod];
-      if (expression.arguments.length === 0) {
+      if (node.arguments.length === 0) {
         return wrap(`${object} | ${filterName}`);
       }
 
       if (jsMethod === 'slice') {
-        formatSliceArguments(expression, object);
+        formatSliceArguments(path, object);
       }
 
-      const args = expression.arguments
-        .map(arg => generateInterpolationEscaped(arg, replaceLocals, false))
+      const args = node.arguments
+        .map((arg, i) => {
+          if (t.isMemberExpression(arg)) {
+            return `${arg.object.name}.${arg.property.name}`;
+          }
+          return generateInterpolationEscaped(path.get(`arguments.${i}`), replaceLocals, false);
+        })
         .join(', ');
 
       return wrap(`${object} | ${filterName}: ${args}`);
     }
     case 'LogicalExpression': {
       let operator;
-      switch (expression.operator) {
+      switch (node.operator) {
         case '&&':
           operator = 'and';
           break;
@@ -345,37 +332,34 @@ function generateInterpolationEscaped(expression, replaceLocals, final) {
           operator = 'or';
           break;
         default:
-          throw new Error(`unsupported logic operand ${expression.operator}`);
+          throw new Error(`unsupported logic operand ${node.operator}`);
       }
       // liquid does not support parenthesis for operator precedence.
       // something like a && (b || c) needs to be expressed in nested ifs.
-      const supportedTypes = ['Identifier', 'Literal'];
-      if (
-        !supportedTypes.includes(expression.left.type) ||
-        !supportedTypes.includes(expression.right.type)
-      ) {
+      const supportedTypes = ['Identifier', 'Literal', 'StringLiteral'];
+      if (!supportedTypes.includes(node.left.type) || !supportedTypes.includes(node.right.type)) {
         throw new Error(
-          `unsupported logic operation between ${expression.left.type} and ${expression.right.type}`
+          `unsupported logic operation between ${node.left.type} and ${node.right.type}`
         );
       }
-      const left = generateInterpolationEscaped(expression.left, replaceLocals, false);
-      const right = generateInterpolationEscaped(expression.right, replaceLocals, false);
+      const left = generateInterpolationEscaped(path.get('left'), replaceLocals, false);
+      const right = generateInterpolationEscaped(path.get('right'), replaceLocals, false);
       return wrap(`${left} ${operator} ${right}`);
     }
     // case 'ArrayExpression': {
-    //   if (!expression.elements.every(el => el.type === 'Literal')) {
-    //     throw new Error(`unsupported ArrayExpression ${expression.elements.map(e => e.type).join(',')}`);
+    //   if (!node.elements.every(el => el.type === 'Literal')) {
+    //     throw new Error(`unsupported ArrayExpression ${node.elements.map(e => e.type).join(',')}`);
     //   }
-    //   return expression.elements.map(e => e.value).join('|')
+    //   return node.elements.map(e => e.value).join('|')
     // }
     case 'TemplateLiteral':
-      return expression.quasis
+      return node.quasis
         .map((q, index) => {
           if (q.tail) {
             return q.value.raw;
           }
           return `${q.value.raw}${generateInterpolationEscaped(
-            expression.expressions[index],
+            path.get(`expressions.${index}`),
             replaceLocals,
             true
           )}`;
@@ -383,28 +367,30 @@ function generateInterpolationEscaped(expression, replaceLocals, final) {
         .join('');
     case 'ConditionalExpression':
       return generateCondition(
-        expression.test,
-        generateInterpolationEscaped(expression.consequent, replaceLocals, true),
-        expression.alternate &&
-          generateInterpolationEscaped(expression.alternate, replaceLocals, true),
+        path.get('test'),
+        generateInterpolationEscaped(path.get('consequent'), replaceLocals, true),
+        node.alternate && generateInterpolationEscaped(path.get('alternate'), replaceLocals, true),
         replaceLocals
       );
     default:
-      throw new Error(`unsupported expression ${expression.type}`);
+      throw new Error(`unsupported expression ${node.type}`);
   }
 }
 
-function formatSliceArguments(expression, object) {
+function formatSliceArguments(path, object) {
+  const expression = path.node;
   const args = expression.arguments;
-  if (args.length === 2 && args[0].type === 'Literal' && args[1].type === 'Literal') {
+
+  if (args.length === 2 && args[0].type === 'NumericLiteral' && args[1].type === 'NumericLiteral') {
     args[1].value -= args[0].value;
     args[1].raw = args[1].value.toString();
   } else if (
     args.length === 1 &&
-    args[0].type === 'Literal' &&
+    args[0].type === 'NumericLiteral' &&
     expression.callee.object.type === 'Identifier'
   ) {
-    args.push(`${object}.size`);
+    const newArg = t.memberExpression(t.identifier(object), t.identifier('size'));
+    path.pushContainer('arguments', newArg);
   } else {
     throw new Error(
       'Unsupported case of "slice" method. Note: slice is different in liquid than in js'
