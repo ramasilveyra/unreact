@@ -151,6 +151,13 @@ describe('while using unreact.compile()', () => {
     expect(resultEJS).toBe(outputEJS);
     expect(resultPug).toBe(outputPug);
   });
+  it('should convert react components and should make constant folding on template literals', async () => {
+    const { input, outputEJS, outputPug } = await getTestCase('template-literal-const-folding');
+    const resultEJS = await compile(input, { templateEngine: 'ejs' });
+    const resultPug = await compile(input, { templateEngine: 'pug' });
+    expect(resultEJS).toBe(outputEJS);
+    expect(resultPug).toBe(outputPug);
+  });
   it('should convert react components to ejs and pug and inline others components', async () => {
     const { input, outputEJS, outputPug } = await getTestCase('inlining');
     const resultEJS = await compile(input, { templateEngine: 'ejs' });

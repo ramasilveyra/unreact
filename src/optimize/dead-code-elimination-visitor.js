@@ -18,6 +18,8 @@ const deadCodeElimination = {
       if (result.confident && ['string', 'number'].includes(typeof result.value)) {
         node.value = result.value;
         node.isString = true;
+      } else if (t.isTemplateLiteral(node.valuePath.node)) {
+        constantFoldingTemplateLiteral(node.valuePath);
       }
     }
   },
@@ -76,3 +78,30 @@ const deadCodeElimination = {
 };
 
 export default deadCodeElimination;
+
+function constantFoldingTemplateLiteral(path) {
+  path.traverse({
+    ConditionalExpression(nodePath) {
+      const result = nodePath.evaluate();
+      if (result.confident && typeof result.value === 'string') {
+        const nodeStart = nodePath.node.start;
+        const nodeIndex = nodePath.parent.expressions.findIndex(expr => expr === nodePath.node);
+        nodePath.parent.quasis = nodePath.parent.quasis.map(q => {
+          const placeholdersStart = 2; // placeholders start symbols length "${".
+          if (q.end === nodeStart - placeholdersStart) {
+            q.value.cooked += result.value;
+            q.value.raw += result.value;
+          }
+          return q;
+        });
+        nodePath.remove();
+        const quasiExtra = nodePath.parentPath.get(`quasis.${nodeIndex + 1}`);
+        const quasiExtraValue = quasiExtra.node.value.cooked;
+        quasiExtra.remove();
+        const quasiBefore = nodePath.parentPath.get(`quasis.${nodeIndex}`);
+        quasiBefore.node.value.cooked += quasiExtraValue;
+        quasiBefore.node.value.raw += quasiExtraValue;
+      }
+    }
+  });
+}
