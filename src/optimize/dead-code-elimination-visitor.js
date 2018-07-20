@@ -41,6 +41,14 @@ const deadCodeElimination = {
   },
   Condition: {
     enter(node, parent) {
+      const pNode = node.testPath.node;
+      if (
+        t.isLogicalExpression(pNode, { operator: '&&' }) &&
+        t.isIdentifier(pNode.left) &&
+        t.isStringLiteral(pNode.right)
+      ) {
+        node.testPath.replaceWith(t.identifier(pNode.left.name));
+      }
       const evaluates = isTruthy(node.testPath);
       if (evaluates === false) {
         if (parent.type === conditionName) {
