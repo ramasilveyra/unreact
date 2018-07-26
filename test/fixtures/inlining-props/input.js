@@ -5,6 +5,11 @@ const Input = ({ error, errorMsg }) => (
     {error && errorMsg ? <p className="ulp-input-message ulp-input-errormsg">{errorMsg}</p> : null}
   </div>
 );
+const Input2 = ({ error, errorMsg }) => (
+  <div>
+    {errorMsg && error ? <p className="ulp-input-message ulp-input-errormsg">{errorMsg}</p> : null}
+  </div>
+);
 const Notice = ({ name, description }) => (
   <p>
     This {name} list {description}
@@ -22,6 +27,7 @@ const List = ({ list, name, error }) => (
     <ul className={undefined}>{list.map(item => <Item>{item}</Item>)}</ul>
     <Button appearence="light" />
     <Input errorMsg="E-mail must be valid." error={error} />
+    <Input2 errorMsg="E-mail must be valid." error={error} />
   </Container>
 );
 
