@@ -10,6 +10,10 @@ const deadCodeElimination = {
       if (node.isBoolean || node.isString) {
         return;
       }
+      if (t.isBooleanLiteral(node.valuePath.node, { value: true })) {
+        node.isBoolean = true;
+        return;
+      }
       if (t.isIdentifier(node.valuePath.node) && node.valuePath.node.name === 'undefined') {
         parent.attributes = parent.attributes.filter(attr => attr !== node);
         return;

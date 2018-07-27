@@ -1,5 +1,6 @@
 import React from 'react';
 
+const RealInput = ({ required }) => <input type="email" value="" required={required} />;
 const Input = ({ error, errorMsg }) => (
   <div>
     {error && errorMsg ? <p className="ulp-input-message ulp-input-errormsg">{errorMsg}</p> : null}
@@ -28,6 +29,7 @@ const List = ({ list, name, error }) => (
     <Button appearence="light" />
     <Input errorMsg="E-mail must be valid." error={error} />
     <Input2 errorMsg="E-mail must be valid." error={error} />
+    <RealInput required />
   </Container>
 );
 
