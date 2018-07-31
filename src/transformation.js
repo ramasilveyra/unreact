@@ -182,6 +182,38 @@ function transformation(oldAst, inputFilePath) {
       if (component) {
         component.defaultExport = true;
       }
+    },
+    ObjectExpression(path) {
+      const parent = path.parent;
+      if (
+        !t.isAssignmentExpression(parent, { operator: '=' }) ||
+        !t.isMemberExpression(parent.left) ||
+        !t.isObjectExpression(parent.right) ||
+        !t.isIdentifier(parent.left.object) ||
+        !(
+          t.isIdentifier(parent.left.property, { name: 'propTypes' }) ||
+          t.isIdentifier(parent.left.property, { name: 'defaultProps' })
+        )
+      ) {
+        return;
+      }
+      const isPropTypes = t.isIdentifier(parent.left.property, { name: 'propTypes' });
+      const isDefaultProps = t.isIdentifier(parent.left.property, { name: 'defaultProps' });
+      const componentName = parent.left.object.name;
+      const component = table.components[componentName];
+      if (!component.definitions) {
+        component.definitions = path.node.properties.map((node, index) =>
+          createDefinition({ node, index, isPropTypes, isDefaultProps, path })
+        );
+      }
+      path.node.properties.forEach((node, index) => {
+        component.definitions = component.definitions.map(definition => {
+          if (definition.name === node.key.name) {
+            return createDefinition({ definition, node, index, isPropTypes, isDefaultProps, path });
+          }
+          return definition;
+        });
+      });
     }
   };
 
@@ -237,4 +269,20 @@ function shouldIgnoreAttr(name) {
     return true;
   }
   return false;
+}
+
+function createDefinition({ definition, node, index, isPropTypes, isDefaultProps, path }) {
+  const newDef = Object.assign({}, definition);
+  if (!newDef.name) {
+    newDef.name = node.key.name;
+  }
+  if (isPropTypes) {
+    newDef.isRequired =
+      t.isMemberExpression(node.value) &&
+      t.isIdentifier(node.value.property, { name: 'isRequired' });
+  }
+  if (isDefaultProps) {
+    newDef.defaultPath = path.get(`properties.${index}.value`);
+  }
+  return newDef;
 }

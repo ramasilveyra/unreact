@@ -22,6 +22,11 @@ const deadCodeElimination = {
       if (result.confident && ['string', 'number'].includes(typeof result.value)) {
         node.value = result.value;
         node.isString = true;
+      } else if (result.confident && [null, false].includes(result.value)) {
+        parent.attributes = parent.attributes.filter(attr => attr !== node);
+      } else if (result.confident && typeof result.value === 'boolean') {
+        node.value = result.value;
+        node.isBoolean = true;
       } else if (t.isTemplateLiteral(node.valuePath.node)) {
         constantFoldingTemplateLiteral(node.valuePath);
       }

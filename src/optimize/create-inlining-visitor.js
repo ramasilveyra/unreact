@@ -52,12 +52,17 @@ function inlineNodeVisitor(node, parent, props, key) {
 }
 
 function inline(props, path, parent) {
-  const iteration = findParent(parent, node => node.type === iterationName);
+  const iteration = findParent(parent, n => n.type === iterationName);
   const matchedProp = props.find(prop => prop.name === path.node.name);
+  const definition = matchedProp && matchedProp.definition;
   if (iteration && iteration.currentValuePath.node.name === path.node.name) {
     return;
   }
   if (!matchedProp || !matchedProp.value) {
+    if (definition && definition.defaultPath) {
+      path.replaceWith(definition.defaultPath.node);
+      return;
+    }
     path.node.name = 'undefined';
     return;
   }

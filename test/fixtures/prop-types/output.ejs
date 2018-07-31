@@ -1,0 +1,13 @@
+<div class="<%= className %>">
+  <h1>Lorem Ipsum</h1>
+
+  <div class="<%= className %>"></div>
+
+  <div>
+    <input type="hidden" name="something"<% if (![null,undefined].includes(something)) { %> value="<%= something %>"<% } %> />
+  
+    <input type="hidden" name="connection-raw" value="<%= connection.name %>" />
+  
+    <input type="hidden" name="connection" value="<%= connection.strategy.toLowerCase() %>" />
+  </div>
+</div>

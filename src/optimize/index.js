@@ -4,6 +4,7 @@ import _ from 'lodash';
 import traverser from '../traverser';
 import createInliningVisitor from './create-inlining-visitor';
 import deadCodeEliminationVisitor from './dead-code-elimination-visitor';
+import setRequiredFlagVisitor from './set-is-required-flag-visitor';
 import mergeVisitors from './merge-visitors';
 
 export default function optimize(ast, table) {
@@ -13,6 +14,12 @@ export default function optimize(ast, table) {
 
 function createMainVisitor(table) {
   return {
+    Mixin: {
+      exit(node) {
+        const tableRC = getTableComponent(node.name, table);
+        traverser(node, setRequiredFlagVisitor(tableRC.definitions));
+      }
+    },
     Element: {
       exit(node) {
         const name = node.tagName;
@@ -23,12 +30,15 @@ function createMainVisitor(table) {
           const propsToInline =
             tableRC.node.props &&
             tableRC.node.props.map(prop => {
+              const definition =
+                tableRC.definitions && tableRC.definitions.find(def => def.name === prop);
               if (prop === 'children' && node.children) {
-                return { name: prop, value: node.children };
+                return { name: prop, value: node.children, definition };
               }
               return {
                 name: prop,
-                value: node.attributes.find(attr => attr.name === prop)
+                value: node.attributes.find(attr => attr.name === prop),
+                definition
               };
             });
           // Clone Mixin.

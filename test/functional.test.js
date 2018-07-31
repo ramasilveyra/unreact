@@ -137,6 +137,13 @@ describe('while using unreact.compile()', () => {
     expect(resultEJS).toBe(outputEJS);
     expect(resultPug).toBe(outputPug);
   });
+  it('should convert react components and handle prop types', async () => {
+    const { input, outputEJS, outputPug } = await getTestCase('prop-types');
+    const resultEJS = await compile(input, { templateEngine: 'ejs' });
+    const resultPug = await compile(input, { templateEngine: 'pug' });
+    expect(resultEJS).toBe(outputEJS);
+    expect(resultPug).toBe(outputPug);
+  });
   it('should convert react components to ejs and pug and support inline styles', async () => {
     const { input, outputEJS, outputPug } = await getTestCase('inline-styles');
     const resultEJS = await compile(input, { templateEngine: 'ejs' });

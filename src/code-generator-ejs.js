@@ -52,7 +52,8 @@ function codeGeneratorEjs(node, { initialIndentLevel = 0, indentLevel = initialI
         isBoolean: node.isBoolean,
         isString: node.isString,
         value: node.value,
-        valuePath: node.valuePath
+        valuePath: node.valuePath,
+        isRequired: node.isRequired
       });
     case interpolationEscapedName:
       return generateInterpolationEscaped(node.valuePath);
@@ -102,7 +103,7 @@ function generateTag(tagName, children, properties) {
   return tag;
 }
 
-function generateProperty({ name, isBoolean, isString, value, valuePath }) {
+function generateProperty({ name, isBoolean, isString, value, valuePath, isRequired }) {
   const normalizedName = normalizePropertyName(name);
   const startPropertyBeginning = ` ${normalizedName}`;
 
@@ -119,7 +120,7 @@ function generateProperty({ name, isBoolean, isString, value, valuePath }) {
   const propertyInterpolated = `${startPropertyBeginning}="${generateInterpolationEscaped(
     valuePath
   )}"`;
-  if (!resultString) {
+  if (!resultString && !isRequired) {
     return `${generateScriptlet(
       `if (![null,undefined].includes(${generatedValue.code})) {`
     )}${propertyInterpolated}${generateScriptlet('}')}`;

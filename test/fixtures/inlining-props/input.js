@@ -30,6 +30,8 @@ const List = ({ list, name, error }) => (
     <Input errorMsg="E-mail must be valid." error={error} />
     <Input2 errorMsg="E-mail must be valid." error={error} />
     <RealInput required />
+    <RealInput required={false} />
+    <RealInput required={null} />
   </Container>
 );
 
