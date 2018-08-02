@@ -6,6 +6,8 @@ function normalizePropertyName(name) {
       return 'for';
     case 'tabIndex':
       return 'tabindex';
+    case 'defaultValue':
+      return 'value';
     default:
       return name;
   }
