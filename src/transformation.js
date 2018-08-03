@@ -66,8 +66,12 @@ function transformation(oldAst, inputFilePath) {
       if (isMapIterator(expressionNode)) {
         return;
       }
-
       const context = getContext(path);
+      if (t.isStringLiteral(expressionNode)) {
+        const text = createText(expressionPath.node.value);
+        addToContext(context, text);
+        return;
+      }
       const interpolationEscaped = createInterpolationEscaped(expressionPath);
       addToContext(context, interpolationEscaped);
     },
