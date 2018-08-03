@@ -85,6 +85,16 @@ const deadCodeElimination = {
         return;
       }
       if (evaluates === true) {
+        if (parent.type === conditionName) {
+          delete parent.type;
+          delete parent.testPath;
+          delete parent.alternate;
+          delete parent.consequent;
+          delete parent._parent;
+          delete node._parent;
+          Object.assign(parent, node.consequent);
+          return;
+        }
         parent.children = parent.children
           .map(child => {
             if (child === node) {

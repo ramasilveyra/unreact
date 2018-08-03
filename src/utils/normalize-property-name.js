@@ -8,6 +8,8 @@ function normalizePropertyName(name) {
       return 'tabindex';
     case 'defaultValue':
       return 'value';
+    case 'readOnly':
+      return 'readonly';
     default:
       return name;
   }
