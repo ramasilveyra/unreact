@@ -1,5 +1,12 @@
 /* eslint-disable no-param-reassign */
-import { rootName, elementName, conditionName, iterationName, mixinName } from '../ast';
+import {
+  rootName,
+  elementName,
+  conditionName,
+  iterationName,
+  mixinName,
+  attributeName
+} from '../ast';
 
 export default function addToContext(context, node, member) {
   if (member) {
@@ -21,6 +28,9 @@ export default function addToContext(context, node, member) {
       } else {
         addNode(context, node, 'consequent');
       }
+      break;
+    case attributeName:
+      addNode(context, node, 'valueNode');
       break;
     default:
       throw new Error(`Don't know how to add node to ${context.type}`);

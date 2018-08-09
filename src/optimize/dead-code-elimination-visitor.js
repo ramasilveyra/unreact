@@ -7,7 +7,7 @@ import { conditionName, textName } from '../ast';
 const deadCodeElimination = {
   Attribute: {
     exit(node, parent) {
-      if (node.isBoolean || node.isString) {
+      if (node.isBoolean || node.isString || node.isNode) {
         return;
       }
       if (t.isBooleanLiteral(node.valuePath.node, { value: true })) {
@@ -22,6 +22,7 @@ const deadCodeElimination = {
       if (result.confident && ['string', 'number'].includes(typeof result.value)) {
         node.value = result.value;
         node.isString = true;
+        node.valuePath = undefined;
       } else if (result.confident && [null, false].includes(result.value)) {
         parent.attributes = parent.attributes.filter(attr => attr !== node);
       } else if (result.confident && typeof result.value === 'boolean') {
@@ -51,6 +52,10 @@ const deadCodeElimination = {
   Condition: {
     enter(node, parent) {
       const pNode = node.testPath.node;
+      if (t.isJSXElement(pNode)) {
+        inlineTruthyCondition(parent, node);
+        return;
+      }
       const isLogicalExpressionAnd = t.isLogicalExpression(pNode, { operator: '&&' });
       const hasStringRight =
         isLogicalExpressionAnd && t.isIdentifier(pNode.left) && t.isStringLiteral(pNode.right);
@@ -85,30 +90,34 @@ const deadCodeElimination = {
         return;
       }
       if (evaluates === true) {
-        if (parent.type === conditionName) {
-          delete parent.type;
-          delete parent.testPath;
-          delete parent.alternate;
-          delete parent.consequent;
-          delete parent._parent;
-          delete node._parent;
-          Object.assign(parent, node.consequent);
-          return;
-        }
-        parent.children = parent.children
-          .map(child => {
-            if (child === node) {
-              return node.consequent;
-            }
-            return child;
-          })
-          .filter(Boolean);
+        inlineTruthyCondition(parent, node);
       }
     }
   }
 };
 
 export default deadCodeElimination;
+
+function inlineTruthyCondition(parent, node) {
+  if (parent.type === conditionName) {
+    delete parent.type;
+    delete parent.testPath;
+    delete parent.alternate;
+    delete parent.consequent;
+    delete parent._parent;
+    delete node._parent;
+    Object.assign(parent, node.consequent);
+    return;
+  }
+  parent.children = parent.children
+    .map(child => {
+      if (child === node) {
+        return node.consequent;
+      }
+      return child;
+    })
+    .filter(Boolean);
+}
 
 function constantFoldingTemplateLiteral(path) {
   path.traverse({

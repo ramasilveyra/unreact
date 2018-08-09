@@ -44,8 +44,12 @@ export default function traverser(ast, visitor) {
       case iterationName:
         traverseNode(node.body, node);
         break;
-      case textName:
       case attributeName:
+        if (node.isNode && node.valueNode) {
+          traverseNode(node.valueNode, node);
+        }
+        break;
+      case textName:
       case interpolationEscapedName:
         break;
       default:

@@ -93,6 +93,12 @@ function transformation(oldAst, inputFilePath) {
         return;
       }
       const expression = path.get('value.expression');
+      if (t.isJSXElement(expression)) {
+        const attribute = createAttribute({ name, isNode: true });
+        addToContext(context, attribute, 'attributes');
+        setContext(path, attribute);
+        return;
+      }
       if (name === 'style') {
         const styles = {};
         expression.node.properties.forEach(prop => {

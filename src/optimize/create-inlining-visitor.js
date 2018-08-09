@@ -2,23 +2,23 @@
 import * as t from '@babel/types';
 import babelTraverse from '@babel/traverse';
 import babelGenerator from '@babel/generator';
-import { iterationName } from '../ast';
+import { iterationName, interpolationEscapedName } from '../ast';
 import parser from '../parser';
 
 function createInliningVisitor(props) {
   return {
     Attribute: {
-      exit(node, parent) {
+      enter(node, parent) {
         inlineNodeVisitor(node, parent, props, 'valuePath');
       }
     },
     InterpolationEscaped: {
-      exit(node, parent) {
+      enter(node, parent) {
         inlineNodeVisitor(node, parent, props, 'valuePath');
       }
     },
     Iteration: {
-      exit(node, parent) {
+      enter(node, parent) {
         inlineNodeVisitor(node, parent, props, 'iterablePath');
       }
     },
@@ -38,7 +38,7 @@ function inlineNodeVisitor(node, parent, props, key) {
   }
   node[key] = clonePath(node[key].node);
   if (t.isIdentifier(node[key].node) && !t.isMemberExpression(node[key].parent)) {
-    inline(props, node[key], parent);
+    inline(props, node[key], parent, node);
     return;
   }
   node[key].traverse({
@@ -46,12 +46,12 @@ function inlineNodeVisitor(node, parent, props, key) {
       if (t.isMemberExpression(path.parent)) {
         return;
       }
-      inline(props, path, parent);
+      inline(props, path, parent, node);
     }
   });
 }
 
-function inline(props, path, parent) {
+function inline(props, path, parent, node) {
   const iteration = findParent(parent, n => n.type === iterationName);
   const matchedProp = props.find(prop => prop.name === path.node.name);
   const definition = matchedProp && matchedProp.definition;
@@ -63,7 +63,9 @@ function inline(props, path, parent) {
       path.replaceWith(definition.defaultPath.node);
       return;
     }
-    path.node.name = 'undefined';
+    if (!node.resolved) {
+      path.node.name = 'undefined';
+    }
     return;
   }
   if (matchedProp.value.isBoolean) {
@@ -74,23 +76,27 @@ function inline(props, path, parent) {
     path.replaceWith(t.stringLiteral(matchedProp.value.value));
     return;
   }
+  if (matchedProp.value.isNode) {
+    if (isInterpolationEscapedId(matchedProp.name, node.consequent)) {
+      node.consequent = matchedProp.value.valueNode;
+      path.replaceWith(t.booleanLiteral(true));
+      return;
+    }
+    const wasInserted = insertChildren(parent, matchedProp.name, matchedProp.value.valueNode);
+    if (wasInserted) {
+      return;
+    }
+    path.replaceWith(t.booleanLiteral(true));
+    return;
+  }
   if (matchedProp.name === 'children') {
-    const position = parent.children.findIndex(child => {
-      if (child.valuePath) {
-        return t.isIdentifier(child.valuePath.node, { name: 'children' });
-      }
-      return false;
-    });
-    parent.children = [
-      ...parent.children.slice(0, position),
-      ...matchedProp.value,
-      ...parent.children.slice(position + 1)
-    ];
+    insertChildren(parent, 'children', matchedProp.value);
     return;
   }
   const matchedPropNode = matchedProp.value.valuePath.node;
   if (t.isIdentifier(matchedPropNode)) {
     path.node.name = matchedPropNode.name;
+    node.resolved = true;
     return;
   }
   path.replaceWith(matchedPropNode);
@@ -124,4 +130,26 @@ function clonePath(node) {
     null
   );
   return newPath;
+}
+
+function insertChildren(parent, identifierName, node) {
+  const position = parent.children.findIndex(child =>
+    isInterpolationEscapedId(identifierName, child)
+  );
+  if (position === -1) {
+    return false;
+  }
+  parent.children = [
+    ...parent.children.slice(0, position),
+    ...(Array.isArray(node) ? node : [node]),
+    ...parent.children.slice(position + 1)
+  ];
+  return true;
+}
+
+function isInterpolationEscapedId(identifierName, child) {
+  if (child && child.type === interpolationEscapedName && child.valuePath) {
+    return t.isIdentifier(child.valuePath.node, { name: identifierName });
+  }
+  return false;
 }

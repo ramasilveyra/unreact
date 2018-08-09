@@ -27,15 +27,19 @@ export const createAttribute = ({
   name,
   value,
   valuePath,
+  valueNode,
   isBoolean = false,
+  isNode = false,
   isString = false
 }) => ({
   type: attributeName,
   name,
   value,
   valuePath,
+  valueNode,
   isBoolean,
-  isString
+  isString,
+  isNode
 });
 
 // Template engine syntax for inline JavaScript.
