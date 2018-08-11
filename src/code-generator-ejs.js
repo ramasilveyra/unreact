@@ -13,16 +13,20 @@ import {
   textName
 } from './ast';
 import normalizePropertyName from './utils/normalize-property-name';
+import getFirstMemberExpression from './utils/get-first-member-expression';
 
-function codeGeneratorEjs(node, { initialIndentLevel = 0, indentLevel = initialIndentLevel } = {}) {
+function codeGeneratorEjs(
+  node,
+  { initialIndentLevel = 0, indentLevel = initialIndentLevel, scope = [] } = {}
+) {
   switch (node.type) {
     case rootName:
       return node.children
-        .map(child => codeGeneratorEjs(child, { initialIndentLevel, indentLevel }))
+        .map(child => codeGeneratorEjs(child, { initialIndentLevel, indentLevel, scope }))
         .join('');
     case mixinName:
       return node.children
-        .map(child => codeGeneratorEjs(child, { initialIndentLevel, indentLevel }))
+        .map(child => codeGeneratorEjs(child, { initialIndentLevel, indentLevel, scope }))
         .join('');
     case elementName:
       return indent(
@@ -30,12 +34,12 @@ function codeGeneratorEjs(node, { initialIndentLevel = 0, indentLevel = initialI
           node.tagName,
           node.children
             .map(child =>
-              codeGeneratorEjs(child, { initialIndentLevel, indentLevel: indentLevel + 1 })
+              codeGeneratorEjs(child, { initialIndentLevel, indentLevel: indentLevel + 1, scope })
             )
             .join(''),
           node.attributes
             .map(child =>
-              codeGeneratorEjs(child, { initialIndentLevel, indentLevel: indentLevel + 1 })
+              codeGeneratorEjs(child, { initialIndentLevel, indentLevel: indentLevel + 1, scope })
             )
             .join('')
         ),
@@ -53,37 +57,52 @@ function codeGeneratorEjs(node, { initialIndentLevel = 0, indentLevel = initialI
         isString: node.isString,
         value: node.value,
         valuePath: node.valuePath,
-        isRequired: node.isRequired
+        isRequired: node.isRequired,
+        scope
       });
     case interpolationEscapedName:
-      return generateInterpolationEscaped(node.valuePath);
+      return generateInterpolationEscaped(node.valuePath, scope);
     case conditionName:
       return indent(
         generateCondition(
           node.testPath,
-          codeGeneratorEjs(node.consequent, { initialIndentLevel, indentLevel: indentLevel + 1 }),
+          codeGeneratorEjs(node.consequent, {
+            initialIndentLevel,
+            indentLevel: indentLevel + 1,
+            scope
+          }),
           node.alternate &&
-            codeGeneratorEjs(node.alternate, { initialIndentLevel, indentLevel: indentLevel + 1 })
+            codeGeneratorEjs(node.alternate, {
+              initialIndentLevel,
+              indentLevel: indentLevel + 1,
+              scope
+            }),
+          scope
         ),
         {
           initialIndentLevel,
           indentLevel
         }
       );
-    case iterationName:
+    case iterationName: {
+      const params = getIterationParams(node.currentValuePath, node.indexPath, node.arrayPath);
       return indent(
         generateIteration({
           iterablePath: node.iterablePath,
-          currentValuePath: node.currentValuePath,
-          indexPath: node.indexPath,
-          arrayPath: node.arrayPath,
-          body: codeGeneratorEjs(node.body, { initialIndentLevel, indentLevel: indentLevel + 1 })
+          params,
+          body: codeGeneratorEjs(node.body, {
+            initialIndentLevel,
+            indentLevel: indentLevel + 1,
+            scope: scope.concat(params)
+          }),
+          scope
         }),
         {
           initialIndentLevel,
           indentLevel
         }
       );
+    }
     default:
       throw new TypeError(node.type);
   }
@@ -103,7 +122,7 @@ function generateTag(tagName, children, properties) {
   return tag;
 }
 
-function generateProperty({ name, isBoolean, isString, value, valuePath, isRequired }) {
+function generateProperty({ name, isBoolean, isString, value, valuePath, isRequired, scope }) {
   const normalizedName = normalizePropertyName(name);
   const startPropertyBeginning = ` ${normalizedName}`;
 
@@ -115,10 +134,12 @@ function generateProperty({ name, isBoolean, isString, value, valuePath, isRequi
     return `${startPropertyBeginning}="${value}"`;
   }
 
+  makeReferenceSafe(valuePath, scope);
   const generatedValue = babelGenerator(valuePath.node, { concise: true });
   const resultString = resolvesToString(valuePath);
   const propertyInterpolated = `${startPropertyBeginning}="${generateInterpolationEscaped(
-    valuePath
+    valuePath,
+    scope
   )}"`;
   if (!resultString && !isRequired) {
     return `${generateScriptlet(
@@ -128,7 +149,8 @@ function generateProperty({ name, isBoolean, isString, value, valuePath, isRequi
   return propertyInterpolated;
 }
 
-function generateCondition(testPath, consequent, alternate) {
+function generateCondition(testPath, consequent, alternate, scope) {
+  makeReferenceSafe(testPath, scope);
   const generatedValue = babelGenerator(testPath.node, { concise: true });
   const conditionArray = [
     generateScriptlet(`if (${generatedValue.code}) {`),
@@ -140,29 +162,78 @@ function generateCondition(testPath, consequent, alternate) {
   return conditionArray.join('');
 }
 
-function generateIteration({ iterablePath, currentValuePath, indexPath, arrayPath, body }) {
+function generateIteration({ iterablePath, params, body, scope }) {
+  makeReferenceSafe(iterablePath, scope);
   const iterableCode = babelGenerator(iterablePath.node, { concise: true }).code;
-  const currentValueCode = currentValuePath
-    ? babelGenerator(currentValuePath.node, { concise: true }).code
-    : null;
-  const indexCode = indexPath ? babelGenerator(indexPath.node, { concise: true }).code : null;
-  const arrayCode = arrayPath ? babelGenerator(arrayPath.node, { concise: true }).code : null;
-  const params = [currentValueCode, indexCode, arrayCode].filter(Boolean).join(', ');
+  const paramsCode = params.join(', ');
   const iterationArray = [
-    generateScriptlet(`${iterableCode}.forEach((${params}) => {`),
+    generateScriptlet(`${iterableCode}.forEach((${paramsCode}) => {`),
     body,
     generateScriptlet('})')
   ].filter(Boolean);
   return iterationArray.join('');
 }
 
+function getIterationParams(currentValuePath, indexPath, arrayPath) {
+  const currentValueCode = currentValuePath
+    ? babelGenerator(currentValuePath.node, { concise: true }).code
+    : null;
+  const indexCode = indexPath ? babelGenerator(indexPath.node, { concise: true }).code : null;
+  const arrayCode = arrayPath ? babelGenerator(arrayPath.node, { concise: true }).code : null;
+  const params = [currentValueCode, indexCode, arrayCode].filter(Boolean);
+  return params;
+}
+
 function generateScriptlet(value) {
   return `<% ${value} %>`;
 }
 
-function generateInterpolationEscaped(valuePath) {
+function generateInterpolationEscaped(valuePath, scope) {
+  makeReferenceSafe(valuePath, scope);
   const generatedValue = babelGenerator(valuePath.node, { concise: true });
   return `<%= ${generatedValue.code} %>`;
+}
+
+function makeReferenceSafe(path, scope) {
+  if (t.isIdentifier(path)) {
+    referenceSafeReplacement(scope, path);
+    return;
+  }
+
+  if (t.isMemberExpression(path)) {
+    const pathFirst = getFirstMemberExpression(path);
+    if (pathFirst.node.name === 'locals') {
+      return;
+    }
+    referenceSafeReplacement(scope, pathFirst);
+  }
+
+  path.traverse({
+    Identifier(path1) {
+      if (t.isMemberExpression(path1.parent) || t.isObjectProperty(path1.parent)) {
+        return;
+      }
+      referenceSafeReplacement(scope, path1);
+    },
+    MemberExpression(path1) {
+      if (t.isMemberExpression(path1.parent)) {
+        return;
+      }
+      const pathFirst = getFirstMemberExpression(path1);
+      if (pathFirst.node.name === 'locals') {
+        return;
+      }
+      referenceSafeReplacement(scope, pathFirst);
+    }
+  });
+}
+
+function referenceSafeReplacement(scope, path) {
+  const isFromScope = !!scope.find(scopeVar => scopeVar === path.node.name);
+  if (isFromScope) {
+    return;
+  }
+  path.replaceWith(t.memberExpression(t.identifier('locals'), path.node));
 }
 
 function indent(str, { initialIndentLevel, indentLevel }) {

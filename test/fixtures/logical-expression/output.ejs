@@ -1,13 +1,13 @@
 <div>
-  <% if (showIcon) { %>
+  <% if (locals.showIcon) { %>
     <span class="icon icon-123">Menu</span>
   <% } %>
 
-  <% if (showIcon && showIconTwice) { %>
+  <% if (locals.showIcon && locals.showIconTwice) { %>
     <span class="icon icon-123">Menu</span>
   <% } %>
 
-  <% if (showIcon) { %><%= showIcon %><% } else { %>
+  <% if (locals.showIcon) { %><%= locals.showIcon %><% } else { %>
     <span class="icon icon-321">Close</span>
   <% } %>
 </div>

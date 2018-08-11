@@ -1,14 +1,14 @@
 <div>
-  <% if (error && errorMsg) { %>
-    <p class="hlp-input-message hlp-input-errormsg"><%= errorMsg %></p>
+  <% if (locals.error && locals.errorMsg) { %>
+    <p class="hlp-input-message hlp-input-errormsg"><%= locals.errorMsg %></p>
   <% } %>
 
-  <% if (!onlyLogo) { %>
-    <% if (text) { %><%= text %><% } else { %>
+  <% if (!locals.onlyLogo) { %>
+    <% if (locals.text) { %><%= locals.text %><% } else { %>
       <p>Log In to 
-        <strong><%= company %></strong>
+        <strong><%= locals.company %></strong>
        to get started using 
-        <strong><%= app %></strong>
+        <strong><%= locals.app %></strong>
       .</p>
     <% } %>
   <% } %>

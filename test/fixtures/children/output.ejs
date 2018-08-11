@@ -1,17 +1,17 @@
 <section class="hlp-box">
   <main class="hlp-container hlp-event-screen">
     <div class="event-img-container">
-      <span class="<%= `event-img ${type}` %>"></span>
+      <span class="<%= `event-img ${locals.type}` %>"></span>
     </div>
   
     <section class="event-container">
-      <% if (eventTitle) { %>
-        <h3 class="event-title"><%= eventTitle %></h3>
+      <% if (locals.eventTitle) { %>
+        <h3 class="event-title"><%= locals.eventTitle %></h3>
       <% } %>
     
-      <% if (eventText) { %>
-        <div class="event-text"><%= eventText %></div>
+      <% if (locals.eventText) { %>
+        <div class="event-text"><%= locals.eventText %></div>
       <% } %>
-    <%= children %></section>
+    <%= locals.children %></section>
   </main>
 </section>

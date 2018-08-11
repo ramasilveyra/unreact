@@ -1,18 +1,18 @@
 <div>
   <ul>
-    <% list.forEach((item) => { %>
+    <% locals.list.forEach((item) => { %>
       <li><%= item %></li>
     <% }) %>
   </ul>
 
   <ul>
-    <% list.forEach((item, index) => { %>
+    <% locals.list.forEach((item, index) => { %>
       <li><%= item %> at <%= index %></li>
     <% }) %>
   </ul>
 
   <ul>
-    <% list.forEach((item, index, array) => { %>
+    <% locals.list.forEach((item, index, array) => { %>
       <li><%= item %> at <%= index %> of <%= array.join(', ') %></li>
     <% }) %>
   </ul>

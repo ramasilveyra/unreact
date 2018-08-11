@@ -1,13 +1,13 @@
-<div class="<%= className %>">
+<div class="<%= locals.className %>">
   <h1>Lorem Ipsum</h1>
 
-  <div class="<%= className %>"></div>
+  <div class="<%= locals.className %>"></div>
 
   <div>
-    <input type="hidden" name="something"<% if (![null,undefined].includes(something)) { %> value="<%= something %>"<% } %> />
+    <input type="hidden" name="something"<% if (![null,undefined].includes(locals.something)) { %> value="<%= locals.something %>"<% } %> />
   
-    <input type="hidden" name="connection-raw" value="<%= connection.name %>" />
+    <input type="hidden" name="connection-raw" value="<%= locals.connection.name %>" />
   
-    <input type="hidden" name="connection" value="<%= connection.strategy.toLowerCase() %>" />
+    <input type="hidden" name="connection" value="<%= locals.connection.strategy.toLowerCase() %>" />
   </div>
 </div>
