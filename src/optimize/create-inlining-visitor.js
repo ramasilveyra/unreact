@@ -100,6 +100,7 @@ function inline(props, path, parent, node) {
     return;
   }
   path.replaceWith(matchedPropNode);
+  node.resolved = true;
 }
 
 function findParent(node, condition) {

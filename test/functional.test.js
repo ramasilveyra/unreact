@@ -30,6 +30,13 @@ describe('while using unreact.compile()', () => {
     expect(resultEJS).toBe(outputEJS);
     expect(resultPug).toBe(outputPug);
   });
+  it('should convert react components to ejs and pug and support inlining while renaming vars', async () => {
+    const { input, outputEJS, outputPug } = await getTestCase('inlining-rename-vars');
+    const resultPug = await compile(input, { templateEngine: 'pug' });
+    const resultEJS = await compile(input, { templateEngine: 'ejs' });
+    expect(resultEJS).toBe(outputEJS);
+    expect(resultPug).toBe(outputPug);
+  });
   it('should convert react components of one tag with complex expression to ejs and pug', async () => {
     const { input, outputEJS, outputPug } = await getTestCase('with-complex-expression');
     const resultEJS = await compile(input, { templateEngine: 'ejs' });
