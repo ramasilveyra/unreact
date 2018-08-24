@@ -51,6 +51,9 @@ function codeGeneratorPug(
         }
       );
     case textName:
+      if (previousSibling && previousSibling.type === conditionName) {
+        return indent(`| ${node.value}`, { initialIndentLevel, indentLevel });
+      }
       if (previousSibling && previousSibling.type === elementName) {
         return indent(`| ${node.value}`, { initialIndentLevel, indentLevel });
       }

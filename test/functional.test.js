@@ -222,6 +222,13 @@ describe('while using unreact.compile()', () => {
     expect(resultEJS).toBe(outputEJS);
     expect(resultPug).toBe(outputPug);
   });
+  it('should convert react components to ejs and pug and children with condition and text', async () => {
+    const { input, outputEJS, outputPug } = await getTestCase('children-condition-text');
+    const resultEJS = await compile(input, { templateEngine: 'ejs' });
+    const resultPug = await compile(input, { templateEngine: 'pug' });
+    expect(resultEJS).toBe(outputEJS);
+    expect(resultPug).toBe(outputPug);
+  });
 });
 
 describe('while using unreact.compileFile()', () => {

@@ -1,0 +1,9 @@
+<div>
+  <% locals.items.forEach((item) => { %>
+    <li>
+      <% if (item.name) { %>
+        <b><%= item.name %>: </b>
+      <% } %>
+    <%= item.description %></li>
+  <% }) %>
+</div>
