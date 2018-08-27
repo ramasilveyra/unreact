@@ -230,7 +230,8 @@ function makeReferenceSafe(path, scope) {
 
 function referenceSafeReplacement(scope, path) {
   const isFromScope = !!scope.find(scopeVar => scopeVar === path.node.name);
-  if (isFromScope) {
+  const isUndefined = path.node.name === 'undefined';
+  if (isFromScope || isUndefined) {
     return;
   }
   path.replaceWith(t.memberExpression(t.identifier('locals'), path.node));

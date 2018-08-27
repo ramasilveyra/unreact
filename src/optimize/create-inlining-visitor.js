@@ -43,7 +43,8 @@ function inlineNodeVisitor(node, parent, props, key) {
   }
   node[key].traverse({
     Identifier(path) {
-      if (t.isMemberExpression(path.parent)) {
+      const isObjectKey = t.isObjectProperty(path.parent) && path.parent.key === path.node;
+      if (t.isMemberExpression(path.parent) || isObjectKey) {
         return;
       }
       inline(props, path, parent, node);
@@ -55,7 +56,12 @@ function inline(props, path, parent, node) {
   const iteration = findParent(parent, n => n.type === iterationName);
   const matchedProp = props.find(prop => prop.name === path.node.name);
   const definition = matchedProp && matchedProp.definition;
-  if (iteration && iteration.currentValuePath.node.name === path.node.name) {
+  if (
+    iteration &&
+    (iteration.currentValuePath.node.name === path.node.name ||
+      (iteration.indexPath && iteration.indexPath.node.name === path.node.name) ||
+      (iteration.arrayPath && iteration.arrayPath.node.name === path.node.name))
+  ) {
     return;
   }
   if (!matchedProp || !matchedProp.value) {

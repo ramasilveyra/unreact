@@ -1,0 +1,7 @@
+<div>
+  <ul>
+    <% [{ name: 'Account', description: accountDescription }, { name: 'Log out', description: logoutDescription }].forEach((item, index) => { %>
+      <li><%= item.name %>: <%= item.description || index %></li>
+    <% }) %>
+  </ul>
+</div>

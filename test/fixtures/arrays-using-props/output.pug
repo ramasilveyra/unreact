@@ -1,0 +1,4 @@
+div
+  ul
+    each item, index in [{ name: 'Account', description: accountDescription }, { name: 'Log out', description: logoutDescription }]
+      li #{item.name}: #{item.description || index}
