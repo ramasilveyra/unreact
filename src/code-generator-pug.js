@@ -57,6 +57,9 @@ function codeGeneratorPug(
       if (previousSibling && previousSibling.type === elementName) {
         return indent(`| ${node.value}`, { initialIndentLevel, indentLevel });
       }
+      if (previousSibling && previousSibling.type === mixinName) {
+        return indent(`| ${node.value}`, { initialIndentLevel, indentLevel });
+      }
       return node.value;
     case attributeName:
       return generateProperty({
