@@ -1,0 +1,7 @@
+<div>
+  <input type="hidden" value="<%= locals.action || 'default' %>" />
+
+  <% (locals.items || []).forEach((item) => { %>
+    <div><%= item %></div>
+  <% }) %>
+</div>

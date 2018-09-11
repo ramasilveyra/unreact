@@ -4,6 +4,7 @@ import babelTraverse from '@babel/traverse';
 import babelGenerator from '@babel/generator';
 import { iterationName, interpolationEscapedName } from '../ast';
 import parser from '../parser';
+import isTruthy from './is-truthy';
 
 function createInliningVisitor(props) {
   return {
@@ -43,6 +44,9 @@ function inlineNodeVisitor(node, parent, props, key) {
   }
   node[key].traverse({
     Identifier(path) {
+      if (path.node.ignore) {
+        return;
+      }
       const isObjectKey = t.isObjectProperty(path.parent) && path.parent.key === path.node;
       if (t.isMemberExpression(path.parent) || isObjectKey) {
         return;
@@ -100,7 +104,15 @@ function inline(props, path, parent, node) {
     return;
   }
   const matchedPropNode = matchedProp.value.valuePath.node;
+  const isDefaultTruthy = definition && definition.defaultPath && isTruthy(definition.defaultPath);
   if (t.isIdentifier(matchedPropNode)) {
+    if (definition && definition.defaultPath && isDefaultTruthy) {
+      const newIdentifier = t.identifier(matchedPropNode.name);
+      newIdentifier.ignore = true;
+      path.replaceWith(t.logicalExpression('||', newIdentifier, definition.defaultPath.node));
+      node.resolved = true;
+      return;
+    }
     path.node.name = matchedPropNode.name;
     node.resolved = true;
     return;

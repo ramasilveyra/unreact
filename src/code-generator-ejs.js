@@ -164,10 +164,13 @@ function generateCondition(testPath, consequent, alternate, scope) {
 
 function generateIteration({ iterablePath, params, body, scope }) {
   makeReferenceSafe(iterablePath, scope);
+  const addParenthesis = t.isLogicalExpression(iterablePath.node);
   const iterableCode = babelGenerator(iterablePath.node, { concise: true }).code;
   const paramsCode = params.join(', ');
   const iterationArray = [
-    generateScriptlet(`${iterableCode}.forEach((${paramsCode}) => {`),
+    generateScriptlet(
+      `${addParenthesis ? `(${iterableCode})` : iterableCode}.forEach((${paramsCode}) => {`
+    ),
     body,
     generateScriptlet('})')
   ].filter(Boolean);
@@ -256,6 +259,13 @@ function resolvesToString(path) {
     t.isConditionalExpression(path.node) &&
     t.isStringLiteral(path.node.consequent) &&
     t.isStringLiteral(path.node.alternate)
+  ) {
+    return true;
+  }
+  if (
+    t.isLogicalExpression(path.node) &&
+    path.node.operator === '||' &&
+    t.isStringLiteral(path.node.right)
   ) {
     return true;
   }
