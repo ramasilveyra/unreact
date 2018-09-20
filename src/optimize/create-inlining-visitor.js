@@ -5,6 +5,7 @@ import babelGenerator from '@babel/generator';
 import { iterationName, interpolationEscapedName } from '../ast';
 import parser from '../parser';
 import isTruthy from './is-truthy';
+import getFirstMemberExpression from '../utils/get-first-member-expression';
 
 function createInliningVisitor(props) {
   return {
@@ -43,6 +44,16 @@ function inlineNodeVisitor(node, parent, props, key) {
     return;
   }
   node[key].traverse({
+    MemberExpression(path) {
+      if (t.isMemberExpression(path.parent)) {
+        return;
+      }
+      const firstMemberExpression = getFirstMemberExpression(path);
+      if (!t.isIdentifier(firstMemberExpression)) {
+        return;
+      }
+      inline(props, firstMemberExpression, parent, node);
+    },
     Identifier(path) {
       if (path.node.ignore) {
         return;

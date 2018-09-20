@@ -223,6 +223,9 @@ function makeReferenceSafe(path, scope) {
         return;
       }
       const pathFirst = getFirstMemberExpression(path1);
+      if (!t.isIdentifier(pathFirst)) {
+        return;
+      }
       if (pathFirst.node.name === 'locals') {
         return;
       }
