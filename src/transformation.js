@@ -23,6 +23,16 @@ function transformation(oldAst, inputFilePath) {
   const table = { components: {}, dependencies: {} };
 
   const reactComponentVisitor = {
+    IfStatement(path) {
+      const context = getContext(path);
+      const isFnWithoutQuickReturn =
+        t.isBlockStatement(path.parent) && t.isArrowFunctionExpression(path.parentPath.parent);
+      if (isFnWithoutQuickReturn) {
+        const condition = createCondition({ testPath: path.get('test') });
+        addToContext(context, condition);
+        setContext(path.parentPath, condition);
+      }
+    },
     JSXElement(path) {
       const tagName = path.node.openingElement.name.name;
       const isFromDependency = table.dependencies[tagName];
@@ -128,6 +138,9 @@ function transformation(oldAst, inputFilePath) {
       }
     },
     LogicalExpression(path) {
+      if (t.isIfStatement(path.parent)) {
+        return;
+      }
       if (t.isConditionalExpression(path.parent) && path.parent.test === path.node) {
         return;
       }

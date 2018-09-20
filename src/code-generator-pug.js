@@ -141,17 +141,22 @@ function generateProperty({ name, isBoolean, isString, value, valuePath }) {
 }
 
 function generateCondition(testPath, consequent, alternate, initialIndentLevel, indentLevel) {
-  const generatedValue = babelGenerator(testPath.node, { concise: true });
-  const newConsequent = fixConsequent(consequent, initialIndentLevel, indentLevel);
   const alternateOrNull = stuff => (alternate ? stuff() : null);
+  const generatedValue = babelGenerator(testPath.node, { concise: true });
+  const generatedIf = `if ${generatedValue.code}`;
+  const generatedConsequent = fixConsequent(consequent, initialIndentLevel, indentLevel);
+  const generatedElse = alternateOrNull(() =>
+    indent('else', { initialIndentLevel, indentLevel: indentLevel - 1 })
+  );
+  const generatedAlternate = alternateOrNull(
+    () =>
+      alternate[0] === '\n' ? alternate : indent(alternate, { initialIndentLevel, indentLevel })
+  );
   const conditionArray = [
-    `if ${generatedValue.code}`,
-    newConsequent,
-    alternateOrNull(() => indent('else', { initialIndentLevel, indentLevel: indentLevel - 1 })),
-    alternateOrNull(
-      () =>
-        alternate[0] === '\n' ? alternate : indent(alternate, { initialIndentLevel, indentLevel })
-    )
+    generatedIf,
+    generatedConsequent,
+    generatedElse && generatedElse[0] === 'e' ? `\n${generatedElse}` : generatedElse,
+    generatedAlternate
   ].filter(Boolean);
   return conditionArray.join('');
 }

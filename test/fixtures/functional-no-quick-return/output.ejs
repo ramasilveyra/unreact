@@ -1,0 +1,13 @@
+<% if (locals.items.length > 1) { %>
+  <% locals.items.forEach((item, i) => { %>
+    <% if (i === 0 || true) { %>
+      <div>
+        <strong><%= item %></strong>
+      </div>
+    <% } else { %>
+      <div><%= item %></div>
+    <% } %>
+  <% }) %>
+<% } else { %>
+  <div><%= locals.items[0] %></div>
+<% } %>
