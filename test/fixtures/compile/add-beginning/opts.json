@@ -1,0 +1,10 @@
+[
+  {
+    "templateEngine": "ejs",
+    "beginning": "<%- include('header') %>"
+  },
+  {
+    "templateEngine": "pug",
+    "beginning": "include 'header'"
+  }
+]

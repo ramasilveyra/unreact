@@ -1,19 +1,22 @@
+import path from 'path';
+import fs from 'fs';
+import util from 'util';
 import React from 'react';
 import ejs from 'ejs';
 import pug from 'pug';
 import htmlMinifier from 'html-minifier';
 import jsBeautify from 'js-beautify';
 import ReactDOMServer from 'react-dom/server';
-import Main from './fixtures/e2e/Main';
-import { getFixture, getFixturePath } from './utils';
+import Main from './fixtures/e2e/basic/Main';
 import { compile } from '../src/index';
+
+const readFile = util.promisify(fs.readFile);
 
 describe('e2e', () => {
   it('should match the result of `ReactDOMServer.renderToString()` and `ejs.render()`', async () => {
-    const fixture = 'e2e';
     const htmlExpexted = ReactDOMServer.renderToStaticMarkup(<Main />);
-    const inputFile = getFixturePath(`${fixture}/Main.js`);
-    const code = await getFixture(`${fixture}/Main.js`);
+    const inputFile = path.join(__dirname, 'fixtures/e2e/basic/Main.js');
+    const code = await readFile(inputFile, 'utf-8');
     const templateEJS = await compile(code, { inputFile, templateEngine: 'ejs' });
     const templatePug = await compile(code, { inputFile, templateEngine: 'pug' });
     const htmlEJS = ejs.render(templateEJS);

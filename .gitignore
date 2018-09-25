@@ -61,7 +61,7 @@ typings/
 # build dir
 build
 
-test/fixtures/compile-file/*.ejs
-test/fixtures/compile-dir/*.ejs
-test/fixtures/compile-file/*.pug
-test/fixtures/compile-dir/*.pug
+test/fixtures/compile-file/basic/*.ejs
+test/fixtures/compile-dir/basic/*.ejs
+test/fixtures/compile-file/basic/*.pug
+test/fixtures/compile-dir/basic/*.pug

@@ -1,358 +1,110 @@
+import fs from 'fs';
+import util from 'util';
+import path from 'path';
 import { compile, compileDir, compileFile } from '../src/index';
-import { getFixture, getFixturePath, getTestCase } from './utils';
 
-describe('while using unreact.compile()', () => {
-  it('should convert react components of one tag to ejs and pug', async () => {
-    const { input, outputEJS, outputPug } = await getTestCase('one-tag');
-    const resultEJS = await compile(input, { templateEngine: 'ejs' });
-    const resultPug = await compile(input, { templateEngine: 'pug' });
-    expect(resultEJS).toBe(outputEJS);
-    expect(resultPug).toBe(outputPug);
-  });
-  it('should convert react components of multiple nested tags to ejs and pug', async () => {
-    const { input, outputEJS, outputPug } = await getTestCase('nested-tags');
-    const resultEJS = await compile(input, { templateEngine: 'ejs' });
-    const resultPug = await compile(input, { templateEngine: 'pug' });
-    expect(resultEJS).toBe(outputEJS);
-    expect(resultPug).toBe(outputPug);
-  });
-  it('should convert react components of one tag with text to ejs and pug', async () => {
-    const { input, outputEJS, outputPug } = await getTestCase('with-text');
-    const resultEJS = await compile(input, { templateEngine: 'ejs' });
-    const resultPug = await compile(input, { templateEngine: 'pug' });
-    expect(resultEJS).toBe(outputEJS);
-    expect(resultPug).toBe(outputPug);
-  });
-  it('should convert react components of one tag with var expression to ejs and pug', async () => {
-    const { input, outputEJS, outputPug } = await getTestCase('with-var-expression');
-    const resultPug = await compile(input, { templateEngine: 'pug' });
-    const resultEJS = await compile(input, { templateEngine: 'ejs' });
-    expect(resultEJS).toBe(outputEJS);
-    expect(resultPug).toBe(outputPug);
-  });
-  it('should convert react components to ejs and pug and support inlining while renaming vars', async () => {
-    const { input, outputEJS, outputPug } = await getTestCase('inlining-rename-vars');
-    const resultPug = await compile(input, { templateEngine: 'pug' });
-    const resultEJS = await compile(input, { templateEngine: 'ejs' });
-    expect(resultEJS).toBe(outputEJS);
-    expect(resultPug).toBe(outputPug);
-  });
-  it('should convert react components of one tag with complex expression to ejs and pug', async () => {
-    const { input, outputEJS, outputPug } = await getTestCase('with-complex-expression');
-    const resultEJS = await compile(input, { templateEngine: 'ejs' });
-    const resultPug = await compile(input, { templateEngine: 'pug' });
-    expect(resultEJS).toBe(outputEJS);
-    expect(resultPug).toBe(outputPug);
-  });
-  it('should convert react components of a self closing tag to ejs and pug', async () => {
-    const { input, outputEJS, outputPug } = await getTestCase('self-closing-tag');
-    const resultEJS = await compile(input, { templateEngine: 'ejs' });
-    const resultPug = await compile(input, { templateEngine: 'pug' });
-    expect(resultEJS).toBe(outputEJS);
-    expect(resultPug).toBe(outputPug);
-  });
-  it('should convert react components with attributes to ejs and pug', async () => {
-    const { input, outputEJS, outputPug } = await getTestCase('attrs');
-    const resultEJS = await compile(input, { templateEngine: 'ejs' });
-    const resultPug = await compile(input, { templateEngine: 'pug' });
-    expect(resultEJS).toBe(outputEJS);
-    expect(resultPug).toBe(outputPug);
-  });
-  it('should convert react components with boolean attributes to ejs and pug', async () => {
-    const { input, outputEJS, outputPug } = await getTestCase('attrs-boolean');
-    const resultEJS = await compile(input, { templateEngine: 'ejs' });
-    const resultPug = await compile(input, { templateEngine: 'pug' });
-    expect(resultEJS).toBe(outputEJS);
-    expect(resultPug).toBe(outputPug);
-  });
-  it('should convert react components with var expression attributes to ejs and pug', async () => {
-    const { input, outputEJS, outputPug } = await getTestCase('attrs-var-expression');
-    const resultPug = await compile(input, { templateEngine: 'pug' });
-    const resultEJS = await compile(input, { templateEngine: 'ejs' });
-    expect(resultEJS).toBe(outputEJS);
-    expect(resultPug).toBe(outputPug);
-  });
-  it('should convert react components with complex expression attributes to ejs and pug', async () => {
-    const { input, outputEJS, outputPug } = await getTestCase('attrs-complex-expression');
-    const resultEJS = await compile(input, { templateEngine: 'ejs' });
-    const resultPug = await compile(input, { templateEngine: 'pug' });
-    expect(resultEJS).toBe(outputEJS);
-    expect(resultPug).toBe(outputPug);
-  });
-  it('should convert react components with logical expression to ejs and pug', async () => {
-    const { input, outputEJS, outputPug } = await getTestCase('logical-expression');
-    const resultEJS = await compile(input, { templateEngine: 'ejs' });
-    const resultPug = await compile(input, { templateEngine: 'pug' });
-    expect(resultEJS).toBe(outputEJS);
-    expect(resultPug).toBe(outputPug);
-  });
-  it('should convert react components with conditional expression to ejs and pug', async () => {
-    const { input, outputEJS, outputPug } = await getTestCase('conditional-expression');
-    const resultEJS = await compile(input, { templateEngine: 'ejs' });
-    const resultPug = await compile(input, { templateEngine: 'pug' });
-    expect(resultEJS).toBe(outputEJS);
-    expect(resultPug).toBe(outputPug);
-  });
-  it('should convert react components with map iterator to ejs and pug', async () => {
-    const { input, outputEJS, outputPug } = await getTestCase('iterator');
-    const resultEJS = await compile(input, { templateEngine: 'ejs' });
-    const resultPug = await compile(input, { templateEngine: 'pug' });
-    expect(resultEJS).toBe(outputEJS);
-    expect(resultPug).toBe(outputPug);
-  });
-  it('should convert react components to ejs and ignore unnecessary attributes', async () => {
-    const { input, outputEJS, outputPug } = await getTestCase('ignore-unnecessary-attrs');
-    const resultEJS = await compile(input, { templateEngine: 'ejs' });
-    const resultPug = await compile(input, { templateEngine: 'pug' });
-    expect(resultEJS).toBe(outputEJS);
-    expect(resultPug).toBe(outputPug);
-  });
-  it('should convert react components with logical expression inside conditional expression to ejs and pug', async () => {
-    const { input, outputEJS, outputPug } = await getTestCase(
-      'logical-expr-inside-conditional-expr'
+const readFile = util.promisify(fs.readFile);
+
+fixturesTester({
+  testSuiteTitle: 'while using unreact.compile()',
+  fixturesDir: path.join(__dirname, 'fixtures', 'compile'),
+  generateTest: async ({ fixtureDir }) => {
+    const jsCodePath = path.join(fixtureDir, 'input.js');
+    const jsCode = await readFile(jsCodePath, 'utf-8');
+    const opts = await getOpts(fixtureDir);
+    await Promise.all(
+      opts.map(async opt => {
+        const outputPath = path.join(fixtureDir, `output.${opt.templateEngine}`);
+        const output = await readFile(outputPath, 'utf-8');
+        const result = await compile(jsCode, opt);
+        expect(result).toBe(output);
+      })
     );
-    const resultEJS = await compile(input, { templateEngine: 'ejs' });
-    const resultPug = await compile(input, { templateEngine: 'pug' });
-    expect(resultEJS).toBe(outputEJS);
-    expect(resultPug).toBe(outputPug);
-  });
-  it('should convert all the supported react components to ejs and pug', async () => {
-    const { input, outputEJS, outputPug } = await getTestCase('react-component-detection');
-    const resultEJS = await compile(input, { templateEngine: 'ejs' });
-    const resultPug = await compile(input, { templateEngine: 'pug' });
-    expect(resultEJS).toBe(outputEJS);
-    expect(resultPug).toBe(outputPug);
-  });
-  it('should convert react components to ejs and pug and support inlining of string in conditions', async () => {
-    const { input, outputEJS, outputPug } = await getTestCase('inlining-string-conditional');
-    const resultEJS = await compile(input, { templateEngine: 'ejs' });
-    const resultPug = await compile(input, { templateEngine: 'pug' });
-    expect(resultEJS).toBe(outputEJS);
-    expect(resultPug).toBe(outputPug);
-  });
-  it('should convert react components to ejs and pug with siblings of text elements and expressions', async () => {
-    const { input, outputEJS, outputPug } = await getTestCase('siblings-text-elements');
-    const resultEJS = await compile(input, { templateEngine: 'ejs' });
-    const resultPug = await compile(input, { templateEngine: 'pug' });
-    expect(resultEJS).toBe(outputEJS);
-    expect(resultPug).toBe(outputPug);
-  });
-  it('should convert react components to ejs and pug and handle children', async () => {
-    const { input, outputEJS, outputPug } = await getTestCase('children');
-    const resultEJS = await compile(input, { templateEngine: 'ejs' });
-    const resultPug = await compile(input, { templateEngine: 'pug' });
-    expect(resultEJS).toBe(outputEJS);
-    expect(resultPug).toBe(outputPug);
-  });
-  it('should convert react components to ejs and pug and handle fragment', async () => {
-    const { input, outputEJS, outputPug } = await getTestCase('fragment');
-    const resultEJS = await compile(input, { templateEngine: 'ejs' });
-    const resultPug = await compile(input, { templateEngine: 'pug' });
-    expect(resultEJS).toBe(outputEJS);
-    expect(resultPug).toBe(outputPug);
-  });
-  it('should convert react components and handle prop types', async () => {
-    const { input, outputEJS, outputPug } = await getTestCase('prop-types');
-    const resultEJS = await compile(input, { templateEngine: 'ejs' });
-    const resultPug = await compile(input, { templateEngine: 'pug' });
-    expect(resultEJS).toBe(outputEJS);
-    expect(resultPug).toBe(outputPug);
-  });
-  it('should convert react components to ejs and pug and support inline styles', async () => {
-    const { input, outputEJS, outputPug } = await getTestCase('inline-styles');
-    const resultEJS = await compile(input, { templateEngine: 'ejs' });
-    const resultPug = await compile(input, { templateEngine: 'pug' });
-    expect(resultEJS).toBe(outputEJS);
-    expect(resultPug).toBe(outputPug);
-  });
-  it('should convert react components to templaste handle attributes with conditions', async () => {
-    const { input, outputEJS, outputPug } = await getTestCase('attrs-conditional');
-    const resultEJS = await compile(input, { templateEngine: 'ejs' });
-    const resultPug = await compile(input, { templateEngine: 'pug' });
-    expect(resultEJS).toBe(outputEJS);
-    expect(resultPug).toBe(outputPug);
-  });
-  it('should convert react components and should make constant folding on template literals', async () => {
-    const { input, outputEJS, outputPug } = await getTestCase('template-literal-const-folding');
-    const resultEJS = await compile(input, { templateEngine: 'ejs' });
-    const resultPug = await compile(input, { templateEngine: 'pug' });
-    expect(resultEJS).toBe(outputEJS);
-    expect(resultPug).toBe(outputPug);
-  });
-  it('should convert react components to ejs and pug and inline others components', async () => {
-    const { input, outputEJS, outputPug } = await getTestCase('inlining');
-    const resultEJS = await compile(input, { templateEngine: 'ejs' });
-    const resultPug = await compile(input, { templateEngine: 'pug' });
-    expect(resultEJS).toBe(outputEJS);
-    expect(resultPug).toBe(outputPug);
-  });
-  it('should convert react components to ejs and pug and inline others components in external files', async () => {
-    const inputFile = getFixturePath('inlining-files/input.js');
-    const { input, outputEJS, outputPug } = await getTestCase('inlining-files');
-    const resultEJS = await compile(input, { inputFile, templateEngine: 'ejs' });
-    const resultPug = await compile(input, { inputFile, templateEngine: 'pug' });
-    expect(resultEJS).toBe(outputEJS);
-    expect(resultPug).toBe(outputPug);
-  });
-  it('should convert react components to ejs and pug and inline others components and theirs props', async () => {
-    const { input, outputEJS, outputPug } = await getTestCase('inlining-props');
-    const resultEJS = await compile(input, { templateEngine: 'ejs' });
-    const resultPug = await compile(input, { templateEngine: 'pug' });
-    expect(resultEJS).toBe(outputEJS);
-    expect(resultPug).toBe(outputPug);
-  });
-  it('should convert react components to ejs and pug and support defaultValue prop', async () => {
-    const { input, outputEJS, outputPug } = await getTestCase('input-default-value');
-    const resultEJS = await compile(input, { templateEngine: 'ejs' });
-    const resultPug = await compile(input, { templateEngine: 'pug' });
-    expect(resultEJS).toBe(outputEJS);
-    expect(resultPug).toBe(outputPug);
-  });
-  it('should convert react components to ejs and pug and support string jsx', async () => {
-    const { input, outputEJS, outputPug } = await getTestCase('jsx-string');
-    const resultEJS = await compile(input, { templateEngine: 'ejs' });
-    const resultPug = await compile(input, { templateEngine: 'pug' });
-    expect(resultEJS).toBe(outputEJS);
-    expect(resultPug).toBe(outputPug);
-  });
-  it('should convert react components to ejs and pug and support props with components', async () => {
-    const { input, outputEJS, outputPug } = await getTestCase('props-with-components');
-    const resultEJS = await compile(input, { templateEngine: 'ejs' });
-    const resultPug = await compile(input, { templateEngine: 'pug' });
-    expect(resultEJS).toBe(outputEJS);
-    expect(resultPug).toBe(outputPug);
-  });
-  it('should convert react components to ejs and pug and children with condition and text', async () => {
-    const { input, outputEJS, outputPug } = await getTestCase('children-condition-text');
-    const resultEJS = await compile(input, { templateEngine: 'ejs' });
-    const resultPug = await compile(input, { templateEngine: 'pug' });
-    expect(resultEJS).toBe(outputEJS);
-    expect(resultPug).toBe(outputPug);
-  });
-  it('should convert react components to ejs and pug and support arrays using props', async () => {
-    const { input, outputEJS, outputPug } = await getTestCase('arrays-using-props');
-    const resultEJS = await compile(input, { templateEngine: 'ejs' });
-    const resultPug = await compile(input, { templateEngine: 'pug' });
-    expect(resultEJS).toBe(outputEJS);
-    expect(resultPug).toBe(outputPug);
-  });
-  it('should convert react components to ejs and pug and support inlining text and mixins', async () => {
-    const { input, outputEJS, outputPug } = await getTestCase('inlining-text-mixins');
-    const resultEJS = await compile(input, { templateEngine: 'ejs' });
-    const resultPug = await compile(input, { templateEngine: 'pug' });
-    expect(resultEJS).toBe(outputEJS);
-    expect(resultPug).toBe(outputPug);
-  });
-  it('should convert react components to ejs and pug and support components with same prop defined as required and default', async () => {
-    const { input, outputEJS, outputPug } = await getTestCase('default-required-prop');
-    const resultEJS = await compile(input, { templateEngine: 'ejs' });
-    const resultPug = await compile(input, { templateEngine: 'pug' });
-    expect(resultEJS).toBe(outputEJS);
-    expect(resultPug).toBe(outputPug);
-  });
-  it('should convert react components to ejs and pug and support components no quick return', async () => {
-    const { input, outputEJS, outputPug } = await getTestCase('functional-no-quick-return');
-    const resultEJS = await compile(input, { templateEngine: 'ejs' });
-    const resultPug = await compile(input, { templateEngine: 'pug' });
-    expect(resultEJS).toBe(outputEJS);
-    expect(resultPug).toBe(outputPug);
-  });
+  }
 });
 
-describe('while using unreact.compileFile()', () => {
-  it('should convert react components of one tag to ejs', async () => {
-    const fixture = 'compile-file';
-    const inputPath = getFixturePath(`${fixture}/input.js`);
-    const outputPathEJS = getFixturePath(`${fixture}/output.ejs`);
-    await compileFile(inputPath, outputPathEJS, { templateEngine: 'ejs' });
-    const outputEJS = await getFixture(`${fixture}/output.ejs`);
-    expect(outputEJS).toMatchSnapshot();
-  });
-  it('should convert react components of one tag to pug', async () => {
-    const fixture = 'compile-file';
-    const inputPath = getFixturePath(`${fixture}/input.js`);
-    const outputPathPug = getFixturePath(`${fixture}/output.pug`);
-    await compileFile(inputPath, outputPathPug, { templateEngine: 'pug' });
-    const outputPug = await getFixture(`${fixture}/output.pug`);
-    expect(outputPug).toMatchSnapshot();
-  });
+fixturesTester({
+  testSuiteTitle: 'while using unreact.compileFile()',
+  fixturesDir: path.join(__dirname, 'fixtures', 'compile-file'),
+  generateTest: async ({ fixtureDir }) => {
+    const jsCodePath = path.join(fixtureDir, 'input.js');
+    const opts = await getOpts(fixtureDir);
+    await Promise.all(
+      opts.map(async opt => {
+        const outputPath = path.join(fixtureDir, `output.${opt.templateEngine}`);
+        await compileFile(jsCodePath, outputPath, opt);
+        const output = await readFile(outputPath, 'utf-8');
+        expect(output).toMatchSnapshot(undefined, opt.templateEngine);
+      })
+    );
+  }
 });
 
-describe('while using unreact.compileDir()', () => {
-  it('should convert react components of one tag to ejs', async () => {
-    const fixture = 'compile-dir';
-    const inputOutputPath = getFixturePath(fixture);
-    await compileDir(inputOutputPath, inputOutputPath, { templateEngine: 'ejs' });
-    const Nested = await getFixture(`${fixture}/Nested.ejs`);
-    const Simple = await getFixture(`${fixture}/Simple.ejs`);
-    expect(`${Nested}\n${Simple}`).toMatchSnapshot();
-  });
-  it('should convert react components of one tag to pug', async () => {
-    const fixture = 'compile-dir';
-    const inputOutputPath = getFixturePath(fixture);
-    await compileDir(inputOutputPath, inputOutputPath, { templateEngine: 'pug' });
-    const Nested = await getFixture(`${fixture}/Nested.pug`);
-    const Simple = await getFixture(`${fixture}/Simple.pug`);
-    expect(`${Nested}\n${Simple}`).toMatchSnapshot();
-  });
+fixturesTester({
+  testSuiteTitle: 'while using unreact.compileDir()',
+  fixturesDir: path.join(__dirname, 'fixtures', 'compile-dir'),
+  generateTest: async ({ fixtureDir }) => {
+    const opts = await getOpts(fixtureDir);
+    await Promise.all(
+      opts.map(async opt => {
+        await compileDir(fixtureDir, fixtureDir, opt);
+        const NestedPath = path.join(fixtureDir, `Nested.${opt.templateEngine}`);
+        const SimplePath = path.join(fixtureDir, `Simple.${opt.templateEngine}`);
+        const Nested = await readFile(NestedPath, 'utf-8');
+        const Simple = await readFile(SimplePath, 'utf-8');
+        expect(`${Nested}\n${Simple}`).toMatchSnapshot(undefined, opt.templateEngine);
+      })
+    );
+  }
 });
 
-describe('while adding string to the beginning and ending', () => {
-  it('should add string to the beginning', async () => {
-    const { input, outputEJS, outputPug } = await getTestCase('add-beginning');
-    const resultEJS = await compile(input, {
-      templateEngine: 'ejs',
-      beginning: "<%- include('header') %>"
+function fixturesTester({ testSuiteTitle, fixturesDir, generateTest, only = '', skip = '' } = {}) {
+  if (!testSuiteTitle) {
+    throw new TypeError('`opts.testSuiteTitle` is required');
+  }
+  if (!fixturesDir) {
+    throw new TypeError('`opts.fixturesDir` is required');
+  }
+  if (!generateTest) {
+    throw new TypeError('`opts.generateTest` is required');
+  }
+  describe(testSuiteTitle, () => {
+    fs.readdirSync(fixturesDir).forEach(caseName => {
+      const fixtureDir = path.join(fixturesDir, caseName);
+      const blockTitle = caseName.split('-').join(' ');
+      const itOnly = only === caseName || only.includes(caseName);
+      const itSkip = skip === caseName || skip.includes(caseName);
+      const itCustom = getIt(itOnly, itSkip);
+      itCustom(blockTitle, async () => {
+        await generateTest({ fixtureDir });
+      });
     });
-    const resultPug = await compile(input, {
-      templateEngine: 'pug',
-      beginning: "include 'header'"
-    });
-    expect(resultEJS).toBe(outputEJS);
-    expect(resultPug).toBe(outputPug);
   });
-  it('should add string to the ending', async () => {
-    const { input, outputEJS, outputPug } = await getTestCase('add-ending');
-    const resultEJS = await compile(input, {
-      templateEngine: 'ejs',
-      ending: "<%- include('footer') %>"
-    });
-    const resultPug = await compile(input, {
-      templateEngine: 'pug',
-      ending: "include 'footer'"
-    });
-    expect(resultEJS).toBe(outputEJS);
-    expect(resultPug).toBe(outputPug);
-  });
-  it('should add string to the beginning and ending', async () => {
-    const { input, outputEJS, outputPug } = await getTestCase('add-beginning-ending');
-    const resultEJS = await compile(input, {
-      templateEngine: 'ejs',
-      beginning: "<%- include('header') %>",
-      ending: "<%- include('footer') %>"
-    });
-    const resultPug = await compile(input, {
-      templateEngine: 'pug',
-      beginning: "include 'header'",
-      ending: "include 'footer'"
-    });
-    expect(resultEJS).toBe(outputEJS);
-    expect(resultPug).toBe(outputPug);
-  });
-});
+}
 
-describe('while changing the indent level', () => {
-  it('should start indent at level 1', async () => {
-    const { input, outputEJS, outputPug } = await getTestCase('change-indent-level');
-    const resultEJS = await compile(input, {
-      templateEngine: 'ejs',
-      initialIndentLevel: 1
-    });
-    const resultPug = await compile(input, {
-      templateEngine: 'pug',
-      initialIndentLevel: 1
-    });
-    expect(resultEJS).toBe(outputEJS);
-    expect(resultPug).toBe(outputPug);
-  });
-});
+function getIt(itOnly, itSkip) {
+  if (itOnly) {
+    return it.only;
+  }
+  if (itSkip) {
+    return it.skip;
+  }
+  return it;
+}
+
+async function getOpts(fixtureDir) {
+  const optsJSONPath = path.join(fixtureDir, 'opts.json');
+  const optsJSPath = path.join(fixtureDir, 'opts.js');
+  const optsJSONExists = fs.existsSync(optsJSONPath);
+  const optsJSExists = fs.existsSync(optsJSPath);
+  if (optsJSONExists) {
+    const optsRaw = await readFile(optsJSONPath, 'utf-8');
+    const opts = JSON.parse(optsRaw);
+    return opts;
+  }
+  if (optsJSExists) {
+    const opts = require(optsJSPath); // eslint-disable-line global-require, import/no-dynamic-require
+    return opts;
+  }
+  throw new TypeError(`Couldn't find an options file for ${fixtureDir}`);
+}

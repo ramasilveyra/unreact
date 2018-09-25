@@ -1,0 +1,10 @@
+[
+  {
+    "templateEngine": "ejs",
+    "initialIndentLevel": 1
+  },
+  {
+    "templateEngine": "pug",
+    "initialIndentLevel": 1
+  }
+]

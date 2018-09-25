@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`while using unreact.compileDir() should convert react components of one tag to ejs 1`] = `
+exports[`while using unreact.compileDir() basic: ejs 1`] = `
 "<div>
   <div>
     <span></span>
@@ -11,7 +11,7 @@ exports[`while using unreact.compileDir() should convert react components of one
 "
 `;
 
-exports[`while using unreact.compileDir() should convert react components of one tag to pug 1`] = `
+exports[`while using unreact.compileDir() basic: pug 1`] = `
 "div
   div
     span
@@ -20,12 +20,12 @@ div
 "
 `;
 
-exports[`while using unreact.compileFile() should convert react components of one tag to ejs 1`] = `
+exports[`while using unreact.compileFile() basic: ejs 1`] = `
 "<div></div>
 "
 `;
 
-exports[`while using unreact.compileFile() should convert react components of one tag to pug 1`] = `
+exports[`while using unreact.compileFile() basic: pug 1`] = `
 "div
 "
 `;

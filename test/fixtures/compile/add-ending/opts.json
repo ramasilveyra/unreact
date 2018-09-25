@@ -1,0 +1,10 @@
+[
+  {
+    "templateEngine": "ejs",
+    "ending": "<%- include('footer') %>"
+  },
+  {
+    "templateEngine": "pug",
+    "ending": "include 'footer'"
+  }
+]

@@ -1,0 +1,8 @@
+[
+  {
+    "templateEngine": "ejs"
+  },
+  {
+    "templateEngine": "pug"
+  }
+]
