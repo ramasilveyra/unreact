@@ -35,6 +35,9 @@ function transformation(oldAst, inputFilePath) {
     },
     JSXElement(path) {
       const tagName = path.node.openingElement.name.name;
+      if (!tagName) {
+        return;
+      }
       const isFromDependency = table.dependencies[tagName];
       if (isFromDependency) {
         isFromDependency.isUsedAsRC = true;
