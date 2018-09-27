@@ -7,6 +7,7 @@ import {
   createCondition,
   createElement,
   createInterpolationEscaped,
+  createInterpolationUnescaped,
   createIteration,
   createMixin,
   createRoot,
@@ -93,6 +94,12 @@ function transformation(oldAst, inputFilePath) {
       const name = path.node.name.name;
       const valueNode = path.node.value;
       if (shouldIgnoreAttr(name)) {
+        return;
+      }
+      if (name === 'dangerouslySetInnerHTML') {
+        const valuePath = path.get('value.expression.properties.0.value');
+        const attribute = createInterpolationUnescaped(valuePath);
+        addToContext(context, attribute);
         return;
       }
       if (!valueNode) {

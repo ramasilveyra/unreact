@@ -7,6 +7,7 @@ import {
   conditionName,
   elementName,
   interpolationEscapedName,
+  interpolationUnescapedName,
   iterationName,
   mixinName,
   rootName,
@@ -61,7 +62,9 @@ function codeGeneratorEjs(
         scope
       });
     case interpolationEscapedName:
-      return generateInterpolationEscaped(node.valuePath, scope);
+      return generateInterpolation('escaped', node.valuePath, scope);
+    case interpolationUnescapedName:
+      return generateInterpolation('unescaped', node.valuePath, scope);
     case conditionName:
       return indent(
         generateCondition(
@@ -137,7 +140,8 @@ function generateProperty({ name, isBoolean, isString, value, valuePath, isRequi
   makeReferenceSafe(valuePath, scope);
   const generatedValue = babelGenerator(valuePath.node, { concise: true });
   const resultString = resolvesToString(valuePath);
-  const propertyInterpolated = `${startPropertyBeginning}="${generateInterpolationEscaped(
+  const propertyInterpolated = `${startPropertyBeginning}="${generateInterpolation(
+    'escaped',
     valuePath,
     scope
   )}"`;
@@ -191,9 +195,12 @@ function generateScriptlet(value) {
   return `<% ${value} %>`;
 }
 
-function generateInterpolationEscaped(valuePath, scope) {
+function generateInterpolation(type, valuePath, scope) {
   makeReferenceSafe(valuePath, scope);
   const generatedValue = babelGenerator(valuePath.node, { concise: true });
+  if (type === 'unescaped') {
+    return `<%- ${generatedValue.code} %>`;
+  }
   return `<%= ${generatedValue.code} %>`;
 }
 

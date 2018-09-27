@@ -4,6 +4,7 @@ import {
   conditionName,
   elementName,
   interpolationEscapedName,
+  interpolationUnescapedName,
   iterationName,
   mixinName,
   rootName,
@@ -51,6 +52,7 @@ export default function traverser(ast, visitor) {
         break;
       case textName:
       case interpolationEscapedName:
+      case interpolationUnescapedName:
         break;
       default:
         throw new TypeError(node.type);

@@ -6,6 +6,7 @@ import {
   conditionName,
   elementName,
   interpolationEscapedName,
+  interpolationUnescapedName,
   iterationName,
   mixinName,
   rootName,
@@ -69,14 +70,17 @@ function codeGeneratorPug(
         value: node.value,
         valuePath: node.valuePath
       });
-    case interpolationEscapedName:
+    case interpolationUnescapedName:
+    case interpolationEscapedName: {
+      const type = node.type === interpolationEscapedName ? 'escaped' : 'unescaped';
       if (previousSibling && [elementName, conditionName].includes(previousSibling.type)) {
-        return indent(`| ${generateInterpolationEscaped(node.valuePath)}`, {
+        return indent(`| ${generateInterpolation(type, node.valuePath)}`, {
           initialIndentLevel,
           indentLevel
         });
       }
-      return generateInterpolationEscaped(node.valuePath);
+      return generateInterpolation(type, node.valuePath);
+    }
     case conditionName:
       return indent(
         generateCondition(
@@ -204,8 +208,11 @@ function generateScriptlet(value) {
   return `- ${value}`;
 }
 
-function generateInterpolationEscaped(valuePath) {
+function generateInterpolation(type, valuePath) {
   const generatedValue = babelGenerator(valuePath.node, { concise: true });
+  if (type === 'unescaped') {
+    return `!{${generatedValue.code}}`;
+  }
   return `#{${generatedValue.code}}`;
 }
 

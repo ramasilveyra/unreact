@@ -57,11 +57,11 @@ export const createInterpolationEscaped = valuePath => ({
 });
 
 // Template engine syntax for unescaped interpolation.
-// export const interpolationUnescapedName = 'InterpolationUnescaped';
-// export const createInterpolationUnescaped = value => ({
-//   type: interpolationUnescapedName,
-//   value
-// });
+export const interpolationUnescapedName = 'InterpolationUnescaped';
+export const createInterpolationUnescaped = valuePath => ({
+  type: interpolationUnescapedName,
+  valuePath
+});
 
 // Template engine syntax for condition.
 export const conditionName = 'Condition';
