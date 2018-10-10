@@ -9,3 +9,6 @@ div
     each item, index in list
       - const array = list;
       li #{item} at #{index} of #{array.join(', ')}
+  ul
+    each item in list.filter(item => !!item)
+      li #{item}

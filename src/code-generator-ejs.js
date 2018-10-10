@@ -167,7 +167,8 @@ function generateCondition(testPath, consequent, alternate, scope) {
 }
 
 function generateIteration({ iterablePath, params, body, scope }) {
-  makeReferenceSafe(iterablePath, scope);
+  const iterationScope = getIterationScope(iterablePath, scope);
+  makeReferenceSafe(iterablePath, iterationScope);
   const addParenthesis = t.isLogicalExpression(iterablePath.node);
   const iterableCode = babelGenerator(iterablePath.node, { concise: true }).code;
   const paramsCode = params.join(', ');
@@ -189,6 +190,17 @@ function getIterationParams(currentValuePath, indexPath, arrayPath) {
   const arrayCode = arrayPath ? babelGenerator(arrayPath.node, { concise: true }).code : null;
   const params = [currentValueCode, indexCode, arrayCode].filter(Boolean);
   return params;
+}
+
+function getIterationScope(iterablePath, scope) {
+  const iterationScope = [];
+  iterablePath.traverse({
+    ArrowFunctionExpression(path) {
+      path.node.params.forEach(param => iterationScope.push(param.name));
+    }
+  });
+
+  return iterationScope.concat(scope);
 }
 
 function generateScriptlet(value) {

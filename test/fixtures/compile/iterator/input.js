@@ -17,6 +17,7 @@ const Foo = ({ list }) => (
         </li>
       ))}
     </ul>
+    <ul>{list.filter(item => !!item).map(item => <li>{item}</li>)}</ul>
   </div>
 );
 
