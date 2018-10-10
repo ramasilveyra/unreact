@@ -16,4 +16,10 @@
       <li><%= item %> at <%= index %> of <%= array.join(', ') %></li>
     <% }) %>
   </ul>
+
+  <ul>
+    <% locals.list.filter(item => !!item).forEach((item) => { %>
+      <li><%= item %></li>
+    <% }) %>
+  </ul>
 </div>
