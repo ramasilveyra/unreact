@@ -1,5 +1,6 @@
 {
   "files.trimTrailingWhitespace": false,
   "prettier.printWidth": 100,
-  "prettier.singleQuote": true
+  "prettier.singleQuote": true,
+  "debug.node.autoAttach": "on"
 }
